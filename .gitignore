@@ -1,0 +1,26 @@
+# Byte-code files
+*.pyc
+__pycache__/
+
+# venv
+venv/
+.venv/
+
+# Distribution / packaging
+.Python
+build/
+dist/
+*.egg-info/
+
+# Editor backup files
+*~
+*.bak
+*.swp
+
+# IDE specific files
+.vscode/
+.idea/
+
+# Operating System files
+.DS_Store
+Thumbs.db
