@@ -1,0 +1,23 @@
+[project]
+name = "collibra-python-connector"
+version = "1.0.0"
+authors = [
+  { name="Raül Dalgamonni", email="rauldalgamonnialonso@gmail.com"},
+]
+description = "A standard Python connector for the Collibra Data Governance Center API."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License", # Choose your license (e.g., MIT, Apache-2.0)
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Intended Audience :: Developers",
+]
+dependencies = [
+    "requests>=2.20.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/collibra-python-connector" # REPLACE with your actual GitHub URL
+"Bug Tracker" = "https://github.com/yourusername/collibra-python-connector/issues"
