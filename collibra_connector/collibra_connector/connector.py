@@ -12,7 +12,6 @@ from .api import (
     Metadata,
     Comment
 )
-from .api.Utils import CollibraUtils
 
 
 class CollibraConnector():
@@ -43,7 +42,6 @@ class CollibraConnector():
         self.workflow = Workflow(self)
         self.metadata = Metadata(self)
         self.comment = Comment(self)
-        self.utils = CollibraUtils(self)
 
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
@@ -75,3 +73,7 @@ class CollibraConnector():
     @property
     def base_url(self):
         return self.__base_url
+
+    @property
+    def timeout(self):
+        return self.__timeout
