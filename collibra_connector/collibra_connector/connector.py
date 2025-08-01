@@ -10,7 +10,8 @@ from .api import (
     Responsibility,
     Workflow,
     Metadata,
-    Comment
+    Comment,
+    Relation
 )
 
 
@@ -42,6 +43,7 @@ class CollibraConnector():
         self.workflow = Workflow(self)
         self.metadata = Metadata(self)
         self.comment = Comment(self)
+        self.relation = Relation(self)
 
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)

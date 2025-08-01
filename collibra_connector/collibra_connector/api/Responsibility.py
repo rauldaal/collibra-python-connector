@@ -113,6 +113,25 @@ class Responsibility(BaseAPI):
         response = self._get(url=f"{self.__base_api}/{responsibility_id}")
         return self._handle_response(response)
 
+    def delete_responsibility(self, responsibility_id: str):
+        """
+        Remove the responsibility identified by the given id.
+        :param responsibility_id: The unique identifier of the responsibility.
+        :return: None
+        """
+        if not responsibility_id:
+            raise ValueError("responsibility_id is required")
+        if not isinstance(responsibility_id, str):
+            raise ValueError("responsibility_id must be a string")
+
+        try:
+            uuid.UUID(responsibility_id)
+        except ValueError as exc:
+            raise ValueError("responsibility_id must be a valid UUID") from exc
+
+        response = self._delete(url=f"{self.__base_api}/{responsibility_id}")
+        self._handle_response(response)
+
     def find_responsibilities(
         self,
         count_limit: int = -1,

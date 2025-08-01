@@ -7,6 +7,7 @@ from .Responsibility import Responsibility
 from .Workflow import Workflow
 from .Metadata import Metadata
 from .Comment import Comment
+from .Relation import Relation
 from .Exceptions import (
     CollibraAPIError,
     UnauthorizedError,

@@ -86,7 +86,7 @@ class Asset(BaseAPI):
         response = self._post(url=self.__base_api, data=data)
         return self._handle_response(response)
 
-    def update_asset_properties(
+    def change_asset(
         self,
         asset_id: str,
         name: str = None,
@@ -146,16 +146,7 @@ class Asset(BaseAPI):
             "typePublicId": type_public_id,
         }
 
-        # Use PATCH method through requests directly since BaseAPI doesn't have _patch
-        import requests
-        response = requests.patch(
-            f"{self.__base_api}/{asset_id}",
-            auth=self.__connector.auth,
-            json=data,
-            headers=self.__header,
-            timeout=30
-        )
-
+        response = self._patch(url=f"{self.__base_api}/{asset_id}", data=data)
         return self._handle_response(response)
 
     def update_asset_attribute(self, asset_id: str, attribute_id: str, value):
@@ -182,16 +173,203 @@ class Asset(BaseAPI):
             "typeId": attribute_id
         }
 
-        # Use PUT method through requests directly since BaseAPI doesn't have _put
-        import requests
-        response = requests.put(
-            f"{self.__base_api}/{asset_id}/attributes",
-            auth=self.__connector.auth,
-            json=data,
-            headers=self.__header,
-            timeout=30
-        )
+        response = self._put(url=f"{self.__base_api}/{asset_id}/attributes", data=data)
+        return self._handle_response(response)
 
+    def set_asset_attributes(self, asset_id: str, type_id: str = None, type_public_id: str = None, values: list = None):
+        """
+        Set asset attributes. Replaces all attributes of the asset with the given ID
+        (of given attribute type) with the attributes from the request.
+        :param asset_id: The ID of the asset.
+        :param type_id: The ID of the attribute type for the new attribute.
+        :param type_public_id: The public ID of the attribute type for the new attribute.
+        :param values: The values for the new attribute (list of objects).
+        :return: The response from setting the attributes.
+        """
+        if not asset_id:
+            raise ValueError("asset_id is required")
+        if not isinstance(asset_id, str):
+            raise ValueError("asset_id must be a string")
+
+        try:
+            uuid.UUID(asset_id)
+        except ValueError as exc:
+            raise ValueError("asset_id must be a valid UUID") from exc
+
+        if not values:
+            raise ValueError("values is required")
+        if not isinstance(values, list):
+            raise ValueError("values must be a list")
+
+        # Validate that either type_id or type_public_id is provided
+        if not type_id and not type_public_id:
+            raise ValueError("Either type_id or type_public_id must be provided")
+
+        # Validate type_id if provided
+        if type_id:
+            if not isinstance(type_id, str):
+                raise ValueError("type_id must be a string")
+            try:
+                uuid.UUID(type_id)
+            except ValueError as exc:
+                raise ValueError("type_id must be a valid UUID") from exc
+
+        # Validate type_public_id if provided
+        if type_public_id and not isinstance(type_public_id, str):
+            raise ValueError("type_public_id must be a string")
+
+        data = {
+            "values": values
+        }
+        
+        # Add type_id or type_public_id to the data
+        if type_id:
+            data["typeId"] = type_id
+        if type_public_id:
+            data["typePublicId"] = type_public_id
+
+        response = self._put(url=f"{self.__base_api}/{asset_id}/attributes", data=data)
+        return self._handle_response(response)
+
+    def remove_asset(self, asset_id: str):
+        """
+        Remove an asset identified by given ID.
+        :param asset_id: The ID of the asset to remove.
+        :return: The response from removing the asset.
+        """
+        if not asset_id:
+            raise ValueError("asset_id is required")
+        if not isinstance(asset_id, str):
+            raise ValueError("asset_id must be a string")
+
+        try:
+            uuid.UUID(asset_id)
+        except ValueError as exc:
+            raise ValueError("asset_id must be a valid UUID") from exc
+
+        response = self._delete(url=f"{self.__base_api}/{asset_id}")
+        return self._handle_response(response)
+
+    def set_asset_relations(self, asset_id: str, related_asset_ids: list, relation_direction: str,
+                            type_id: str = None, type_public_id: str = None):
+        """
+        Set relations for the asset with the given ID. All relations described by this request
+        will replace the existing ones (identified with asset as one end, relation type and direction).
+        :param asset_id: The ID of the asset.
+        :param related_asset_ids: The IDs of the related assets (list of UUIDs).
+        :param relation_direction: The relation direction ('TO_TARGET' or 'TO_SOURCE').
+        :param type_id: The ID of the relation type for the relations to be set.
+        :param type_public_id: The public ID of the relation type for the relations to be set.
+        :return: The response from setting the relations.
+        """
+        if not asset_id:
+            raise ValueError("asset_id is required")
+        if not isinstance(asset_id, str):
+            raise ValueError("asset_id must be a string")
+
+        try:
+            uuid.UUID(asset_id)
+        except ValueError as exc:
+            raise ValueError("asset_id must be a valid UUID") from exc
+
+        if not related_asset_ids:
+            raise ValueError("related_asset_ids is required")
+        if not isinstance(related_asset_ids, list):
+            raise ValueError("related_asset_ids must be a list")
+
+        # Validate all related asset IDs are valid UUIDs
+        for i, related_id in enumerate(related_asset_ids):
+            if not isinstance(related_id, str):
+                raise ValueError(f"related_asset_ids[{i}] must be a string")
+            try:
+                uuid.UUID(related_id)
+            except ValueError as exc:
+                raise ValueError(f"related_asset_ids[{i}] must be a valid UUID") from exc
+
+        if not relation_direction:
+            raise ValueError("relation_direction is required")
+        if relation_direction not in ["TO_TARGET", "TO_SOURCE"]:
+            raise ValueError("relation_direction must be either 'TO_TARGET' or 'TO_SOURCE'")
+
+        # Validate that either type_id or type_public_id is provided
+        if not type_id and not type_public_id:
+            raise ValueError("Either type_id or type_public_id must be provided")
+
+        # Validate type_id if provided
+        if type_id:
+            if not isinstance(type_id, str):
+                raise ValueError("type_id must be a string")
+            try:
+                uuid.UUID(type_id)
+            except ValueError as exc:
+                raise ValueError("type_id must be a valid UUID") from exc
+
+        # Validate type_public_id if provided
+        if type_public_id and not isinstance(type_public_id, str):
+            raise ValueError("type_public_id must be a string")
+
+        data = {
+            "relatedAssetIds": related_asset_ids,
+            "relationDirection": relation_direction
+        }
+
+        # Add type_id or type_public_id to the data
+        if type_id:
+            data["typeId"] = type_id
+        if type_public_id:
+            data["typePublicId"] = type_public_id
+
+        response = self._put(url=f"{self.__base_api}/{asset_id}/relations", data=data)
+        return self._handle_response(response)
+
+    def set_asset_responsibilities(self, asset_id: str, role_id: str, owner_ids: list):
+        """
+        Set responsibilities for the asset with the given ID.
+        :param asset_id: The ID of the asset.
+        :param role_id: The ID of the role for the responsibilities to be set.
+        :param owner_ids: The IDs of the owners (list of UUIDs). An owner is either user or group.
+        :return: The response from setting the responsibilities.
+        """
+        if not asset_id:
+            raise ValueError("asset_id is required")
+        if not isinstance(asset_id, str):
+            raise ValueError("asset_id must be a string")
+
+        try:
+            uuid.UUID(asset_id)
+        except ValueError as exc:
+            raise ValueError("asset_id must be a valid UUID") from exc
+
+        if not role_id:
+            raise ValueError("role_id is required")
+        if not isinstance(role_id, str):
+            raise ValueError("role_id must be a string")
+
+        try:
+            uuid.UUID(role_id)
+        except ValueError as exc:
+            raise ValueError("role_id must be a valid UUID") from exc
+
+        if not owner_ids:
+            raise ValueError("owner_ids is required")
+        if not isinstance(owner_ids, list):
+            raise ValueError("owner_ids must be a list")
+
+        # Validate all owner IDs are valid UUIDs
+        for i, owner_id in enumerate(owner_ids):
+            if not isinstance(owner_id, str):
+                raise ValueError(f"owner_ids[{i}] must be a string")
+            try:
+                uuid.UUID(owner_id)
+            except ValueError as exc:
+                raise ValueError(f"owner_ids[{i}] must be a valid UUID") from exc
+
+        data = {
+            "roleId": role_id,
+            "ownerIds": owner_ids
+        }
+
+        response = self._put(url=f"{self.__base_api}/{asset_id}/responsibilities", data=data)
         return self._handle_response(response)
 
     def find_assets(

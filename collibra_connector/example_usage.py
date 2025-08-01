@@ -84,7 +84,26 @@ def main():
         except Exception as e:
             print(f"User lookup failed: {e}")
 
-        # 10. Using utilities for complex operations
+        # 10. Working with Relations
+        print("\n🔗 Working with Relations...")
+        try:
+            # Example: Add a relation between two assets (using mock UUIDs for demonstration)
+            source_asset_id = "12345678-1234-1234-1234-123456789012"  # Replace with actual asset ID
+            target_asset_id = "87654321-4321-4321-4321-210987654321"  # Replace with actual asset ID
+            relation_type_id = "abcdefab-abcd-abcd-abcd-abcdefabcdef"  # Replace with actual relation type ID
+
+            # Note: This is just an example - you'd need actual asset IDs in a real implementation
+            print("Relations API is ready to use when you have actual asset IDs")
+            print("Available methods:")
+            print("- connector.relation.add_relation(source_id, target_id, type_id=None)")
+            print("- connector.relation.get_relation(relation_id)")
+            print("- connector.relation.remove_relation(relation_id)")
+            print("- connector.relation.change_relation(relation_id, source_id=None, target_id=None)")
+
+        except Exception as e:
+            print(f"Relation operations failed: {e}")
+
+        # 11. Using utilities for complex operations
         print("\n🔧 Using utility functions...")
         try:
             # Get complete hierarchy for a community
