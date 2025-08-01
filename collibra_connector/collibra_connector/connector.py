@@ -2,7 +2,17 @@ import logging
 import requests
 from requests.auth import HTTPBasicAuth
 
-from .api import Asset
+from .api import (
+    Asset,
+    Community,
+    Domain,
+    User,
+    Responsibility,
+    Workflow,
+    Metadata,
+    Comment
+)
+from .api.Utils import CollibraUtils
 
 
 class CollibraConnector():
@@ -24,7 +34,16 @@ class CollibraConnector():
         self.__base_url = api
         self.__timeout = timeout
 
+        # Initialize all API classes
         self.asset = Asset(self)
+        self.community = Community(self)
+        self.domain = Domain(self)
+        self.user = User(self)
+        self.responsibility = Responsibility(self)
+        self.workflow = Workflow(self)
+        self.metadata = Metadata(self)
+        self.comment = Comment(self)
+        self.utils = CollibraUtils(self)
 
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)

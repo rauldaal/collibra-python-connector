@@ -1,10 +1,10 @@
 [project]
 name = "collibra-connector"
-version = "1.0.9"
+version = "1.0.10a"
 authors = [
   { name="Raül Dalgamonni", email="rauldalgamonnialonso@gmail.com"},
 ]
-description = "An UNOFICIAL standard Python connector for the Collibra Data Governance Center API."
+description = "An UNOFFICIAL standard Python connector for the Collibra Data Governance Center API."
 readme = "README.md"
 requires-python = ">=3.8"
 classifiers = [
