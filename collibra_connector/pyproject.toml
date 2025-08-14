@@ -1,6 +1,6 @@
 [project]
 name = "collibra-connector"
-version = "1.0.10c"
+version = "1.0.11"
 authors = [
   { name="Raül Dalgamonni", email="rauldalgamonnialonso@gmail.com"},
 ]
