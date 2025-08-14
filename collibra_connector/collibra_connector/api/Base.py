@@ -38,7 +38,7 @@ class BaseAPI:
             timeout=self.__connector.timeout
         )
 
-    def _post(self, url: str, data: dict, headers: dict = None):
+    def _post(self, url: str, data: dict, headers: dict = None, params: dict = None):
         """
         Makes a POST request to the specified URL with the given data.
         :param url: The URL to send the POST request to.
@@ -56,6 +56,7 @@ class BaseAPI:
             auth=self.__connector.auth,
             json=data,
             headers=headers,
+            params=params,
             timeout=self.__connector.timeout
         )
 

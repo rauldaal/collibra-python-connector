@@ -72,8 +72,8 @@ class Metadata(BaseAPI):
                 for domain in domains_data.get("results", []):
                     metadata["Domain"][domain["name"]] = domain["id"]
                 if (
-                    domains_data.get("offset", 0) + domains_data.get("limit", 0) >=
-                    domains_data.get("total", 0)
+                    domains_data.get("offset", 0) + domains_data.get("limit", 0)
+                    >= domains_data.get("total", 0)
                 ):
                     break
                 domains_params["offset"] += domains_params["limit"]

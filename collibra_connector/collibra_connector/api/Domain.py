@@ -112,7 +112,7 @@ class Domain(BaseAPI):
         if type_public_id is not None:
             params["typePublicId"] = type_public_id
 
-        response = self._get(params=params)
+        response = self._get(url=self.__base_api, params=params)
         return self._handle_response(response)
 
     def add_domain(

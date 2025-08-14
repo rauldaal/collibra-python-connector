@@ -221,7 +221,7 @@ class Asset(BaseAPI):
         data = {
             "values": values
         }
-        
+
         # Add type_id or type_public_id to the data
         if type_id:
             data["typeId"] = type_id
