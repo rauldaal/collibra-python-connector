@@ -121,5 +121,5 @@ class Comment(BaseAPI):
         if user_threads is not False:  # Only add if different from default
             params["userThreads"] = user_threads
 
-        response = self._get(params=params)
+        response = self._get(url=self.__base_api, params=params)
         return self._handle_response(response)

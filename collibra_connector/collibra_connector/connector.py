@@ -11,7 +11,9 @@ from .api import (
     Workflow,
     Metadata,
     Comment,
-    Relation
+    Relation,
+    OutputModule,
+    Utils
 )
 
 
@@ -22,7 +24,7 @@ class CollibraConnector():
     The authentication is done using HTTP Basic Auth.
     """
 
-    def __init__(self, api: str, username: str, password: str, timeout: int = 30):
+    def __init__(self, api: str, username: str, password: str, timeout: int = 30, **kwargs):
         """
         Initializes the CollibraConnector with API URL and authentication credentials.
         :param api: The API URL for Collibra.
@@ -44,6 +46,12 @@ class CollibraConnector():
         self.metadata = Metadata(self)
         self.comment = Comment(self)
         self.relation = Relation(self)
+        self.output_module = OutputModule(self)
+        self.utils = Utils(self)
+
+        self.uuids = {}
+        if kwargs.get('uuids'):
+            self.uuids = self.utils.get_uuids()
 
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
