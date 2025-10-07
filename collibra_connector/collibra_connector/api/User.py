@@ -199,5 +199,5 @@ class User(BaseAPI):
                     params["userId"] = []
                 params["userId"].append(user_id)
 
-        response = self._get(params=params)
+        response = self._get(url=self.__base_api, params=params)
         return self._handle_response(response)

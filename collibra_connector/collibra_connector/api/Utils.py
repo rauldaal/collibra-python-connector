@@ -22,7 +22,7 @@ class Utils(BaseAPI):
         metadata = {
             "AssetType": {},
             "Relation": {},
-            "Responsability": {},
+            "Responsibility": {},
             "Status": {},
             "Attribute": {},
             "Community": {},
