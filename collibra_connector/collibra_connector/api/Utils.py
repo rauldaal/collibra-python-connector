@@ -51,7 +51,7 @@ class Utils(BaseAPI):
             resource_roles_response = self._get(url=resource_roles_url)
             resource_roles_data = self._handle_response(resource_roles_response)
             for resource_role in resource_roles_data["results"]:
-                metadata["Responsability"][resource_role["name"]] = resource_role["id"]
+                metadata["Responsibility"][resource_role["name"]] = resource_role["id"]
 
             # Get Status UUIDs
             statuses_url = f"{self.__base_api}/statuses"
