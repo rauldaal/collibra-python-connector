@@ -28,6 +28,7 @@ class Utils(BaseAPI):
             "Community": {},
             "Domain": {},
             "DomainType": {},
+            "WorkflowDefinition": {},
         }
         try:
             # Get Asset Type UUIDs
@@ -95,6 +96,15 @@ class Utils(BaseAPI):
             for domain_type in domain_types_data["results"]:
                 metadata["DomainType"][domain_type["name"]] = domain_type["id"]
 
+            # Get Workflow Definition UUIDs
+            workflow_definitions_url = f"{self.__base_api}/workflowDefinitions"
+            workfow_definitions_response = self._get(
+                workflow_definitions_url
+            )
+            workfow_definitions_response.raise_for_status()
+            workflow_definitions_data = workfow_definitions_response.json()
+            for workflow_definition in workflow_definitions_data["results"]:
+                metadata["WorkflowDefinition"][workflow_definition["name"]] = workflow_definition["id"]
             logger.info("Collibra UUIDS fetched successfully")
             return metadata
 
