@@ -108,7 +108,7 @@ class Community(BaseAPI):
         if sort_order != "ASC":
             params["sortOrder"] = sort_order
 
-        response = self._get(params=params)
+        response = self._get(url=self.__base_api, params=params)
         return self._handle_response(response)
 
     def add_community(
