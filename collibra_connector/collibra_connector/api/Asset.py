@@ -78,7 +78,7 @@ class Asset(BaseAPI):
             "domainId": domain_id,
             "displayName": display_name,
             "typeId": type_id,
-            "id": id,
+            "id": _id,
             "statusId": status_id,
             "excludedFromAutoHyperlink": excluded_from_auto_hyperlink,
             "typePublicId": type_public_id
@@ -448,3 +448,184 @@ class Asset(BaseAPI):
         response = self._get(url=f"{self.__base_api}/activities", params=params)
         result = self._handle_response(response)
         return result.get("results", [])
+
+    def get_full_profile(
+        self,
+        asset_id: str,
+        include_attributes: bool = True,
+        include_relations: bool = True,
+        include_responsibilities: bool = True,
+        include_comments: bool = False,
+        include_activities: bool = False
+    ):
+        """
+        Get a complete profile of an asset including all related information.
+
+        This is a convenience method that fetches all relevant data about an asset
+        in a single call, perfect for data cataloging and governance use cases.
+
+        Args:
+            asset_id: The UUID of the asset.
+            include_attributes: Include asset attributes (default: True).
+            include_relations: Include incoming/outgoing relations (default: True).
+            include_responsibilities: Include responsibility assignments (default: True).
+            include_comments: Include comments on the asset (default: False).
+            include_activities: Include activity history (default: False).
+
+        Returns:
+            Dictionary containing:
+                - asset: Basic asset information
+                - attributes: Dict of attribute name -> value
+                - relations: Dict with 'outgoing' and 'incoming' relations
+                - responsibilities: List of role assignments
+                - comments: List of comments (if requested)
+                - activities: List of activities (if requested)
+
+        Example:
+            >>> profile = connector.asset.get_full_profile("asset-uuid")
+            >>> print(profile['asset']['name'])
+            >>> print(profile['attributes']['Description'])
+            >>> print(profile['relations']['outgoing'])
+        """
+        if not asset_id:
+            raise ValueError("asset_id is required")
+
+        try:
+            uuid.UUID(asset_id)
+        except ValueError as exc:
+            raise ValueError("asset_id must be a valid UUID") from exc
+
+        # Get the connector reference for accessing other APIs
+        connector = self._BaseAPI__connector
+
+        profile = {
+            "asset": None,
+            "attributes": {},
+            "relations": {"outgoing": {}, "incoming": {}, "outgoing_count": 0, "incoming_count": 0},
+            "responsibilities": [],
+            "comments": [],
+            "activities": []
+        }
+
+        # 1. Get basic asset info
+        profile["asset"] = self.get_asset(asset_id)
+
+        # 2. Get attributes
+        if include_attributes:
+            try:
+                profile["attributes"] = connector.attribute.get_attributes_as_dict(asset_id)
+            except Exception:
+                pass  # Attributes are optional
+
+        # 3. Get relations
+        if include_relations:
+            try:
+                profile["relations"] = connector.relation.get_asset_relations(
+                    asset_id,
+                    include_type_details=True
+                )
+            except Exception:
+                pass  # Relations are optional
+
+        # 4. Get responsibilities
+        if include_responsibilities:
+            try:
+                import requests
+                url = f"{connector.api}/responsibilities"
+                params = {"resourceIds": asset_id, "limit": 50}
+                response = requests.get(url, auth=connector.auth, timeout=connector.timeout)
+                if response.status_code == 200:
+                    data = response.json()
+                    for resp in data.get('results', []):
+                        role = resp.get('role', {}).get('name', 'Unknown')
+                        owner = resp.get('owner', {})
+                        owner_name = f"{owner.get('firstName', '')} {owner.get('lastName', '')}".strip()
+                        if not owner_name:
+                            owner_name = owner.get('name', 'Unknown')
+                        profile["responsibilities"].append({
+                            "role": role,
+                            "owner": owner_name,
+                            "owner_id": owner.get('id')
+                        })
+            except Exception:
+                pass  # Responsibilities are optional
+
+        # 5. Get comments
+        if include_comments:
+            try:
+                comments_result = connector.comment.get_comments(asset_id)
+                profile["comments"] = comments_result.get('results', [])
+            except Exception:
+                pass  # Comments are optional
+
+        # 6. Get activities
+        if include_activities:
+            try:
+                profile["activities"] = self.get_asset_activities(asset_id)
+            except Exception:
+                pass  # Activities are optional
+
+        return profile
+
+    def get_full_profile_flat(self, asset_id: str):
+        """
+        Get a flattened profile of an asset suitable for export to CSV/DataFrame.
+
+        Returns a dictionary with all values as simple types (strings, numbers, lists).
+
+        Args:
+            asset_id: The UUID of the asset.
+
+        Returns:
+            Flattened dictionary with all asset information.
+
+        Example:
+            >>> flat = connector.asset.get_full_profile_flat("asset-uuid")
+            >>> import pandas as pd
+            >>> df = pd.DataFrame([flat])
+        """
+        profile = self.get_full_profile(asset_id)
+
+        flat = {
+            # Basic info
+            "id": profile["asset"].get("id"),
+            "name": profile["asset"].get("name"),
+            "display_name": profile["asset"].get("displayName"),
+            "type": profile["asset"].get("type", {}).get("name"),
+            "type_id": profile["asset"].get("type", {}).get("id"),
+            "status": profile["asset"].get("status", {}).get("name"),
+            "status_id": profile["asset"].get("status", {}).get("id"),
+            "domain": profile["asset"].get("domain", {}).get("name"),
+            "domain_id": profile["asset"].get("domain", {}).get("id"),
+            "created_on": profile["asset"].get("createdOn"),
+            "last_modified_on": profile["asset"].get("lastModifiedOn"),
+        }
+
+        # Add attributes with prefix
+        for attr_name, attr_value in profile.get("attributes", {}).items():
+            # Clean HTML from description
+            if attr_name == "Description" and isinstance(attr_value, str):
+                import re
+                attr_value = re.sub(r'<[^>]+>', '', attr_value)
+            flat[f"attr_{attr_name.lower().replace(' ', '_')}"] = attr_value
+
+        # Add relation counts
+        flat["relations_outgoing_count"] = profile["relations"].get("outgoing_count", 0)
+        flat["relations_incoming_count"] = profile["relations"].get("incoming_count", 0)
+
+        # Add relation summaries
+        outgoing_summary = []
+        for rel_type, targets in profile["relations"].get("outgoing", {}).items():
+            outgoing_summary.append(f"{rel_type}: {len(targets)}")
+        flat["relations_outgoing_summary"] = "; ".join(outgoing_summary)
+
+        incoming_summary = []
+        for rel_type, sources in profile["relations"].get("incoming", {}).items():
+            incoming_summary.append(f"{rel_type}: {len(sources)}")
+        flat["relations_incoming_summary"] = "; ".join(incoming_summary)
+
+        # Add responsibilities
+        resp_list = [f"{r['role']}: {r['owner']}" for r in profile.get("responsibilities", [])]
+        flat["responsibilities"] = "; ".join(resp_list)
+
+        return flat
