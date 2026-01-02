@@ -265,7 +265,7 @@ class TestCollibraConnectorVersion:
         )
 
         version = connector.get_version()
-        assert version == "1.0.20"
+        assert version == "1.1.0"
 
 
 class TestCollibraConnectorAPIModules:

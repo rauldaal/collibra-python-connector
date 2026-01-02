@@ -176,10 +176,11 @@ class TestAssetFindAssets:
                 mock_get.return_value = Mock()
                 mock_handle.return_value = {"results": [], "total": 0}
 
-                asset_api.find_assets(
+                result = asset_api.find_assets(
                     community_id="12345678-1234-1234-1234-123456789012",
                     domain_id="87654321-4321-4321-4321-210987654321",
-                    limit=500
+                    limit=500,
+                    offset=100
                 )
 
                 call_args = mock_get.call_args
@@ -187,8 +188,81 @@ class TestAssetFindAssets:
                 assert params["communityId"] == "12345678-1234-1234-1234-123456789012"
                 assert params["domainId"] == "87654321-4321-4321-4321-210987654321"
                 assert params["limit"] == 500
+                assert params["offset"] == 100
 
     def test_find_assets_validates_community_id_uuid(self, asset_api):
         """Test that community_id must be a valid UUID."""
         with pytest.raises(ValueError, match="community_id must be a valid UUID"):
             asset_api.find_assets(community_id="not-a-uuid")
+
+
+class TestAssetTags:
+    """Tests for tag methods."""
+
+    def test_add_tags_success(self, asset_api):
+        """Test adding tags successfully."""
+        with patch.object(asset_api, '_post') as mock_post:
+            with patch.object(asset_api, '_handle_response') as mock_handle:
+                mock_post.return_value = Mock()
+                mock_handle.return_value = {"id": "asset-id", "tags": ["tag1", "tag2"]}
+
+                result = asset_api.add_tags("asset-id", ["tag1", "tag2"])
+
+                assert "tags" in result
+                mock_post.assert_called_once()
+                args, kwargs = mock_post.call_args
+                assert kwargs['url'].endswith("/asset-id/tags")
+                assert kwargs['data'] == {"tagNames": ["tag1", "tag2"]}
+
+    def test_remove_tags_success(self, asset_api):
+        """Test removing tags successfully."""
+        with patch('requests.delete') as mock_delete:
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_response.text = "{}"
+            mock_delete.return_value = mock_response
+            
+            with patch.object(asset_api, '_handle_response') as mock_handle:
+                mock_handle.return_value = {}
+                
+                asset_api.remove_tags("asset-id", ["tag1"])
+                
+                mock_delete.assert_called_once()
+                args, kwargs = mock_delete.call_args
+                assert args[0].endswith("/asset-id/tags")
+                assert kwargs['json'] == ["tag1"]
+
+
+class TestAssetAttachments:
+    """Tests for attachment methods."""
+
+    def test_add_attachment_success(self, asset_api):
+        """Test adding attachment successfully."""
+        with patch('os.path.exists', return_value=True):
+            with patch('builtins.open', create=True) as mock_open:
+                with patch('requests.post') as mock_post:
+                    mock_response = Mock()
+                    mock_response.status_code = 201
+                    mock_response.text = '{"id": "file-id"}'
+                    mock_response.json.return_value = {"id": "file-id"}
+                    mock_post.return_value = mock_response
+                    
+                    result = asset_api.add_attachment("asset-id", "/path/to/file.txt")
+                    
+                    assert result == {"id": "file-id"}
+                    mock_post.assert_called_once()
+                    args, kwargs = mock_post.call_args
+                    assert 'files' in kwargs
+                    assert kwargs['files']['file'][0] == 'file.txt'
+
+    def test_get_attachments_success(self, asset_api):
+        """Test getting attachments successfully."""
+        with patch.object(asset_api, '_get') as mock_get:
+            with patch.object(asset_api, '_handle_response') as mock_handle:
+                mock_get.return_value = Mock()
+                mock_handle.return_value = {"results": [{"id": "att-1"}]}
+
+                result = asset_api.get_attachments("asset-id")
+                
+                assert len(result) == 1
+                assert result[0]["id"] == "att-1"

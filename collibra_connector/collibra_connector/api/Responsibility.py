@@ -182,13 +182,13 @@ class Responsibility(BaseAPI):
             raise ValueError(f"type must be one of: {', '.join(valid_types)}")
 
         # Validate that globalOnly and type are mutually exclusive
-        if global_only is not None and type is not None:
+        if global_only is not None and _type is not None:
             raise ValueError("globalOnly and type parameters are mutually exclusive")
 
         # Validate owner_ids if provided
         if owner_ids is not None:
             if not isinstance(owner_ids, list):
-                raise ValueError("owner_ids must be a list")
+                raise ValueError("owner_id must be a list")
             for owner_id in owner_ids:
                 if not isinstance(owner_id, str):
                     raise ValueError("owner_id must be a string")
@@ -246,10 +246,10 @@ class Responsibility(BaseAPI):
             params["sortField"] = sort_field
         if sort_order != "DESC":
             params["sortOrder"] = sort_order
-        if type is not None:
-            params["type"] = type
+        if _type is not None:
+            params["type"] = _type
 
-        response = self._get(params=params)
+        response = self._get(url=self.__base_api, params=params)
         return self._handle_response(response)
 
     def get_asset_responsibilities(self, asset_id: str, role_ids: list = None):

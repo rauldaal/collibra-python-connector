@@ -389,7 +389,7 @@ class Relation(BaseAPI):
                     "target_id": target.get("id"),
                     "target_name": target.get("name"),
                     "target_type": target_type_name or target.get("type", {}).get("name"),
-                    "target_status": target.get("status", {}).get("name")
+                    "target_status": target.get("status", {}).get("name") if target.get("status") else "N/A"
                 })
 
         # Get incoming relations
@@ -416,7 +416,7 @@ class Relation(BaseAPI):
                     "source_id": source.get("id"),
                     "source_name": source.get("name"),
                     "source_type": source_type_name or source.get("type", {}).get("name"),
-                    "source_status": source.get("status", {}).get("name")
+                    "source_status": source.get("status", {}).get("name") if source.get("status") else "N/A"
                 })
 
         return result

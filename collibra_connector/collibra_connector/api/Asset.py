@@ -377,7 +377,8 @@ class Asset(BaseAPI):
         community_id: str = None,
         asset_type_ids: list = None,
         domain_id: str = None,
-        limit: int = 1000
+        limit: int = 1000,
+        offset: int = 0
     ):
         """
         Find assets with optional filters.
@@ -385,9 +386,10 @@ class Asset(BaseAPI):
         :param asset_type_ids: Optional list of asset type IDs to filter by.
         :param domain_id: Optional domain ID to filter by.
         :param limit: Maximum number of results per page.
+        :param offset: First result to retrieve.
         :return: List of assets matching the criteria.
         """
-        params = {"limit": limit}
+        params = {"limit": limit, "offset": offset}
 
         if community_id:
             if not isinstance(community_id, str):
@@ -473,19 +475,19 @@ class Asset(BaseAPI):
             include_activities: Include activity history (default: False).
 
         Returns:
-            Dictionary containing:
-                - asset: Basic asset information
+            AssetProfileModel containing:
+                - asset: AssetModel with basic asset information
                 - attributes: Dict of attribute name -> value
-                - relations: Dict with 'outgoing' and 'incoming' relations
-                - responsibilities: List of role assignments
-                - comments: List of comments (if requested)
+                - relations: RelationsGrouped with 'outgoing' and 'incoming' relations
+                - responsibilities: List of ResponsibilitySummary objects
+                - comments: List of CommentModel objects (if requested)
                 - activities: List of activities (if requested)
 
         Example:
             >>> profile = connector.asset.get_full_profile("asset-uuid")
-            >>> print(profile['asset']['name'])
-            >>> print(profile['attributes']['Description'])
-            >>> print(profile['relations']['outgoing'])
+            >>> print(profile.asset.name)
+            >>> print(profile.attributes.get('Description'))
+            >>> print(profile.data_steward)
         """
         if not asset_id:
             raise ValueError("asset_id is required")
@@ -498,29 +500,31 @@ class Asset(BaseAPI):
         # Get the connector reference for accessing other APIs
         connector = self._BaseAPI__connector
 
-        profile = {
-            "asset": None,
-            "attributes": {},
-            "relations": {"outgoing": {}, "incoming": {}, "outgoing_count": 0, "incoming_count": 0},
-            "responsibilities": [],
-            "comments": [],
-            "activities": []
-        }
+        from ..models import (
+            AssetProfileModel,
+            RelationsGrouped,
+            ResponsibilitySummary,
+            CommentModel
+        )
 
-        # 1. Get basic asset info
-        profile["asset"] = self.get_asset(asset_id)
+        asset_data = self.get_asset(asset_id)
+        attributes_dict = {}
+        relations_data = {"outgoing": {}, "incoming": {}, "outgoing_count": 0, "incoming_count": 0}
+        responsibilities_list = []
+        comments_list = []
+        activities_list = []
 
         # 2. Get attributes
         if include_attributes:
             try:
-                profile["attributes"] = connector.attribute.get_attributes_as_dict(asset_id)
+                attributes_dict = connector.attribute.get_attributes_as_dict(asset_id)
             except Exception:
                 pass  # Attributes are optional
 
         # 3. Get relations
         if include_relations:
             try:
-                profile["relations"] = connector.relation.get_asset_relations(
+                relations_data = connector.relation.get_asset_relations(
                     asset_id,
                     include_type_details=True
                 )
@@ -542,11 +546,11 @@ class Asset(BaseAPI):
                         owner_name = f"{owner.get('firstName', '')} {owner.get('lastName', '')}".strip()
                         if not owner_name:
                             owner_name = owner.get('name', 'Unknown')
-                        profile["responsibilities"].append({
-                            "role": role,
-                            "owner": owner_name,
-                            "owner_id": owner.get('id')
-                        })
+                        responsibilities_list.append(ResponsibilitySummary(
+                            role=role,
+                            owner=owner_name,
+                            owner_id=owner.get('id')
+                        ))
             except Exception:
                 pass  # Responsibilities are optional
 
@@ -554,18 +558,30 @@ class Asset(BaseAPI):
         if include_comments:
             try:
                 comments_result = connector.comment.get_comments(asset_id)
-                profile["comments"] = comments_result.get('results', [])
+                for comment_data in comments_result.get('results', []):
+                    try:
+                        comments_list.append(CommentModel.model_validate(comment_data))
+                    except Exception:
+                        pass
             except Exception:
                 pass  # Comments are optional
 
         # 6. Get activities
         if include_activities:
             try:
-                profile["activities"] = self.get_asset_activities(asset_id)
+                activities_list = self.get_asset_activities(asset_id)
             except Exception:
                 pass  # Activities are optional
 
-        return profile
+        # Create and return AssetProfileModel
+        return AssetProfileModel(
+            asset=asset_data,
+            attributes=attributes_dict,
+            relations=RelationsGrouped(**relations_data),
+            responsibilities=responsibilities_list,
+            comments=comments_list,
+            activities=activities_list
+        )
 
     def get_full_profile_flat(self, asset_id: str):
         """
@@ -588,16 +604,16 @@ class Asset(BaseAPI):
 
         flat = {
             # Basic info
-            "id": profile["asset"].get("id"),
-            "name": profile["asset"].get("name"),
-            "display_name": profile["asset"].get("displayName"),
-            "type": profile["asset"].get("type", {}).get("name"),
-            "type_id": profile["asset"].get("type", {}).get("id"),
-            "status": profile["asset"].get("status", {}).get("name"),
-            "status_id": profile["asset"].get("status", {}).get("id"),
-            "domain": profile["asset"].get("domain", {}).get("name"),
-            "domain_id": profile["asset"].get("domain", {}).get("id"),
-            "created_on": profile["asset"].get("createdOn"),
+            "id": profile.asset.id,
+            "name": profile.asset.name,
+            "display_name": profile.asset.display_name,
+            "type": profile.asset.type_name,
+            "type_id": profile.asset.type.id,
+            "status": profile.asset.status_name,
+            "status_id": profile.asset.status.id,
+            "domain": profile.asset.domain_name,
+            "domain_id": profile.asset.domain.id,
+            "created_on": profile.asset.created_on,
             "last_modified_on": profile["asset"].get("lastModifiedOn"),
         }
 
@@ -629,3 +645,104 @@ class Asset(BaseAPI):
         flat["responsibilities"] = "; ".join(resp_list)
 
         return flat
+
+    def add_tags(self, asset_id: str, tags: list):
+        """
+        Add tags to an asset.
+        :param asset_id: The ID of the asset.
+        :param tags: List of tags (strings) to add.
+        :return: Response from the API.
+        """
+        if not asset_id:
+            raise ValueError("asset_id is required")
+        if not tags or not isinstance(tags, list):
+            raise ValueError("tags must be a non-empty list of strings")
+
+        url = f"{self.__base_api}/{asset_id}/tags"
+        data = {"tagNames": tags}
+        
+        response = self._post(url=url, data=data)
+        return self._handle_response(response)
+
+    def remove_tags(self, asset_id: str, tags: list):
+        """
+        Remove tags from an asset.
+        :param asset_id: The ID of the asset.
+        :param tags: List of tags (strings) to remove.
+        :return: Response from the API.
+        """
+        if not asset_id:
+            raise ValueError("asset_id is required")
+        if not tags or not isinstance(tags, list):
+            raise ValueError("tags must be a non-empty list of strings")
+
+        url = f"{self.__base_api}/{asset_id}/tags"
+        # DELETE with body is not standard in many libs but Collibra might support it or use a different endpoint?
+        # Checking Collibra API: DELETE /assets/{assetId}/tags takes list of tags in body.
+        # BaseAPI._delete does not support data.
+        # We need to use requests directly or extend BaseAPI.
+        
+        import requests
+        # Access connector auth and timeout
+        connector = self._BaseAPI__connector
+        
+        response = requests.delete(
+            url, 
+            json=tags, # Pass tags directly as list or {"tags": ...}? API says list of strings usually.
+                       # Checking Collibra docs: DELETE /assets/{assetId}/tags body is ["tag1", "tag2"]
+            auth=connector.auth,
+            timeout=connector.timeout,
+            headers={"Content-Type": "application/json"}
+        )
+        
+        return self._handle_response(response)
+
+    def add_attachment(self, asset_id: str, file_path: str):
+        """
+        Upload an attachment to an asset.
+        :param asset_id: The ID of the asset.
+        :param file_path: Path to the file to upload.
+        :return: Response from the API.
+        """
+        import os
+        import requests
+        
+        if not asset_id:
+            raise ValueError("asset_id is required")
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"File not found: {file_path}")
+
+        url = f"{self._BaseAPI__connector.api}/attachments"
+        filename = os.path.basename(file_path)
+        
+        # Open file in binary mode and ensure it's closed
+        with open(file_path, 'rb') as f:
+            files = {
+                'file': (filename, f, 'application/octet-stream'),
+                'resourceId': (None, str(asset_id)),
+                'resourceType': (None, 'Asset')
+            }
+            
+            response = requests.post(
+                url,
+                files=files,
+                auth=self._BaseAPI__connector.auth,
+                timeout=self._BaseAPI__connector.timeout
+            )
+        
+        return self._handle_response(response)
+
+    def get_attachments(self, asset_id: str):
+        """
+        Get attachments for an asset.
+        :param asset_id: The ID of the asset.
+        :return: List of attachments.
+        """
+        url = f"{self._BaseAPI__connector.api}/attachments"
+        params = {
+            "resourceId": asset_id,
+            "resourceType": "Asset"
+        }
+        
+        response = self._get(url=url, params=params)
+        return self._handle_response(response).get("results", [])

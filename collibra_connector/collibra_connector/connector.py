@@ -25,7 +25,8 @@ from .api import (
     Comment,
     Relation,
     OutputModule,
-    Utils
+    Utils,
+    Search
 )
 
 if TYPE_CHECKING:
@@ -74,9 +75,9 @@ class CollibraConnector:
 
     def __init__(
         self,
-        api: str,
-        username: str,
-        password: str,
+        api: Optional[str] = None,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
         timeout: int = DEFAULT_TIMEOUT,
         max_retries: int = DEFAULT_MAX_RETRIES,
         retry_delay: float = DEFAULT_RETRY_DELAY,
@@ -84,6 +85,9 @@ class CollibraConnector:
     ) -> None:
         """
         Initialize the CollibraConnector with API URL and authentication credentials.
+        
+        Credentials can be provided as arguments or via environment variables:
+        COLLIBRA_URL, COLLIBRA_USERNAME, COLLIBRA_PASSWORD.
 
         Args:
             api: The base API URL for Collibra (e.g., 'https://your-instance.collibra.com').
@@ -96,13 +100,23 @@ class CollibraConnector:
                 - uuids (bool): If True, fetches all UUIDs on initialization.
 
         Raises:
-            ValueError: If api, username, or password is empty.
+            ValueError: If api, username, or password is empty and not in env vars.
         """
+        import os
+
+        # Load from env vars if not provided (None means not provided, "" means empty)
+        if api is None:
+            api = os.environ.get("COLLIBRA_URL")
+        if username is None:
+            username = os.environ.get("COLLIBRA_USERNAME")
+        if password is None:
+            password = os.environ.get("COLLIBRA_PASSWORD")
+
         if not api or not api.strip():
             raise ValueError("API URL cannot be empty")
         if not username or not username.strip():
             raise ValueError("Username cannot be empty")
-        if not password:
+        if not password or not password.strip():
             raise ValueError("Password cannot be empty")
 
         self.__auth: AuthBase = HTTPBasicAuth(username, password)
@@ -126,13 +140,15 @@ class CollibraConnector:
         self.relation: Relation = Relation(self)
         self.output_module: OutputModule = OutputModule(self)
         self.utils: Utils = Utils(self)
+        self.search: Search = Search(self)
+        
+        # Initialize Logger without basicConfig
+        self.logger: logging.Logger = logging.getLogger(__name__)
+        self.logger.addHandler(logging.NullHandler())
 
         self.uuids: Dict[str, Dict[str, str]] = {}
         if kwargs.get('uuids'):
             self.uuids = self.utils.get_uuids() or {}
-
-        logging.basicConfig(level=logging.INFO)
-        self.logger: logging.Logger = logging.getLogger(__name__)
 
     def __enter__(self) -> "CollibraConnector":
         """Enter context manager, creating a session for connection pooling."""
