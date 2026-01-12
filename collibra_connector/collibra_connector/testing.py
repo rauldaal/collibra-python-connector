@@ -691,7 +691,7 @@ class MockCollibraConnector:
 
     def get_version(self) -> str:
         """Get mock version."""
-        return "1.1.0-mock"
+        return "1.2.0-mock"
 
     def clear_all_data(self) -> None:
         """Clear all mock data."""

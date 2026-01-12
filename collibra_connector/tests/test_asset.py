@@ -110,13 +110,13 @@ class TestAssetAddAsset:
                 type_id="not-a-uuid"
             )
 
-    def test_add_asset_validates_excluded_from_auto_hyperlink_type(self, asset_api):
-        """Test that excluded_from_auto_hyperlink must be boolean."""
-        with pytest.raises(ValueError, match="excluded_from_auto_hyperlink must be a boolean"):
+    def test_add_asset_validates_excluded_from_auto_hyperlinking_type(self, asset_api):
+        """Test that excluded_from_auto_hyperlinking must be boolean."""
+        with pytest.raises(ValueError, match="excluded_from_auto_hyperlinking must be a boolean"):
             asset_api.add_asset(
-                name="Test Asset",
+                name="Test",
                 domain_id="12345678-1234-1234-1234-123456789012",
-                excluded_from_auto_hyperlink="yes"
+                excluded_from_auto_hyperlinking="yes"
             )
 
 
@@ -130,12 +130,16 @@ class TestAssetGetAsset:
                 mock_get.return_value = Mock()
                 mock_handle.return_value = {
                     "id": "12345678-1234-1234-1234-123456789012",
-                    "name": "Test Asset"
+                    "name": "Test Asset",
+                    "type": {"id": "type-uuid", "name": "Table"},
+                    "status": {"id": "status-uuid", "name": "Accepted"},
+                    "domain": {"id": "domain-uuid", "name": "Physical Data"}
                 }
 
                 result = asset_api.get_asset("12345678-1234-1234-1234-123456789012")
 
-                assert result["name"] == "Test Asset"
+                assert result.name == "Test Asset"
+                assert result.id == "12345678-1234-1234-1234-123456789012"
 
 
 class TestAssetRemoveAsset:
@@ -160,7 +164,7 @@ class TestAssetFindAssets:
         with patch.object(asset_api, '_get') as mock_get:
             with patch.object(asset_api, '_handle_response') as mock_handle:
                 mock_get.return_value = Mock()
-                mock_handle.return_value = {"results": [], "total": 0}
+                mock_handle.return_value = {"results": [], "total": 0, "offset": 0, "limit": 1000}
 
                 result = asset_api.find_assets()
 
@@ -168,6 +172,7 @@ class TestAssetFindAssets:
                 call_args = mock_get.call_args
                 params = call_args.kwargs.get('params') or call_args[1].get('params')
                 assert params["limit"] == 1000
+                assert len(result) == 0
 
     def test_find_assets_with_filters(self, asset_api):
         """Test find_assets with filters."""

@@ -1,5 +1,6 @@
 import uuid
 from .Base import BaseAPI
+from ..models import parse_relation, parse_relations, RelationTypeModel
 
 
 class Relation(BaseAPI):
@@ -88,7 +89,7 @@ class Relation(BaseAPI):
             data["typePublicId"] = type_public_id
 
         response = self._post(url=self.__base_api, data=data)
-        return self._handle_response(response)
+        return parse_relation(self._handle_response(response))
 
     def get_relation(self, relation_id: str):
         """
@@ -107,7 +108,7 @@ class Relation(BaseAPI):
             raise ValueError("relation_id must be a valid UUID") from exc
 
         response = self._get(url=f"{self.__base_api}/{relation_id}")
-        return self._handle_response(response)
+        return parse_relation(self._handle_response(response))
 
     def remove_relation(self, relation_id: str):
         """
@@ -203,7 +204,7 @@ class Relation(BaseAPI):
             data["endingDate"] = ending_date
 
         response = self._patch(url=f"{self.__base_api}/{relation_id}", data=data)
-        return self._handle_response(response)
+        return parse_relation(self._handle_response(response))
 
     def find_relations(
         self,
@@ -278,7 +279,7 @@ class Relation(BaseAPI):
             params["targetTypeId"] = target_type_id
 
         response = self._get(url=self.__base_api, params=params)
-        return self._handle_response(response)
+        return parse_relations(self._handle_response(response))
 
     def get_relation_type(self, relation_type_id: str):
         """
@@ -300,7 +301,7 @@ class Relation(BaseAPI):
 
         url = self._BaseAPI__connector.api + f"/relationTypes/{relation_type_id}"
         response = self._get(url=url)
-        return self._handle_response(response)
+        return RelationTypeModel.model_validate(self._handle_response(response))
 
     def get_asset_relations(
         self,
@@ -357,66 +358,68 @@ class Relation(BaseAPI):
                     type_details = self.get_relation_type(type_id)
                     type_cache[type_id] = type_details
                 except Exception:
-                    type_cache[type_id] = {}
+                    # Cache empty dict or None to avoid refetching
+                    type_cache[type_id] = None
 
-            cached = type_cache.get(type_id, {})
+            cached = type_cache.get(type_id)
+            if not cached:
+                return "Unknown"
+                
             if is_source:
-                return cached.get("role", "Unknown")
+                return cached.role or "Unknown"
             else:
-                return cached.get("coRole", "Unknown")
+                return cached.co_role or "Unknown"
 
         # Get outgoing relations
         if direction in ("BOTH", "OUTGOING"):
             outgoing = self.find_relations(source_id=asset_id, limit=limit)
-            result["outgoing_count"] = outgoing.get("total", 0)
+            result["outgoing_count"] = outgoing.total
 
-            for rel in outgoing.get("results", []):
-                rel_type = rel.get("type", {})
-                type_id = rel_type.get("id")
+            for rel in outgoing:
+                type_id = rel.type.id
                 type_name = get_type_name(type_id, is_source=True)
-                target = rel.get("target", {})
+                target = rel.target
 
                 # Get target asset type by looking up the relation type
                 target_type_name = None
                 if type_id in type_cache:
-                    target_type_name = type_cache[type_id].get("targetType", {}).get("name")
+                    target_type_name = type_cache[type_id].target_type.name if type_cache[type_id].target_type else None
 
                 if type_name not in result["outgoing"]:
                     result["outgoing"][type_name] = []
 
                 result["outgoing"][type_name].append({
-                    "id": rel.get("id"),
-                    "target_id": target.get("id"),
-                    "target_name": target.get("name"),
-                    "target_type": target_type_name or target.get("type", {}).get("name"),
-                    "target_status": target.get("status", {}).get("name") if target.get("status") else "N/A"
+                    "id": rel.id,
+                    "target_id": target.id,
+                    "target_name": target.name,
+                    "target_type": target_type_name,
+                    "target_status": "N/A" # Status is not in Reference
                 })
 
         # Get incoming relations
         if direction in ("BOTH", "INCOMING"):
             incoming = self.find_relations(target_id=asset_id, limit=limit)
-            result["incoming_count"] = incoming.get("total", 0)
+            result["incoming_count"] = incoming.total
 
-            for rel in incoming.get("results", []):
-                rel_type = rel.get("type", {})
-                type_id = rel_type.get("id")
+            for rel in incoming:
+                type_id = rel.type.id
                 type_name = get_type_name(type_id, is_source=False)
-                source = rel.get("source", {})
+                source = rel.source
 
                 # Get source asset type by looking up the relation type
                 source_type_name = None
                 if type_id in type_cache:
-                    source_type_name = type_cache[type_id].get("sourceType", {}).get("name")
+                    source_type_name = type_cache[type_id].source_type.name if type_cache[type_id].source_type else None
 
                 if type_name not in result["incoming"]:
                     result["incoming"][type_name] = []
 
                 result["incoming"][type_name].append({
-                    "id": rel.get("id"),
-                    "source_id": source.get("id"),
-                    "source_name": source.get("name"),
-                    "source_type": source_type_name or source.get("type", {}).get("name"),
-                    "source_status": source.get("status", {}).get("name") if source.get("status") else "N/A"
+                    "id": rel.id,
+                    "source_id": source.id,
+                    "source_name": source.name,
+                    "source_type": source_type_name,
+                    "source_status": "N/A"
                 })
 
         return result

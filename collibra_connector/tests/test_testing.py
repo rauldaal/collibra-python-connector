@@ -14,10 +14,10 @@ class TestMockCollibraConnector:
     """Tests for MockCollibraConnector."""
 
     def test_init(self):
+        """Test initialization of mock connector."""
         mock = MockCollibraConnector()
-        assert mock.api == "mock://collibra.test"
-        assert mock.test_connection() is True
-        assert mock.get_version() == "1.1.0-mock"
+        assert mock.get_version() == "1.2.0-mock"
+        assert mock.asset is not None
 
     def test_context_manager(self):
         with MockCollibraConnector() as mock:

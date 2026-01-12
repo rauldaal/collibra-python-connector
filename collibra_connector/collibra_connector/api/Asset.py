@@ -1,5 +1,6 @@
 import uuid
 from .Base import BaseAPI
+from ..models import parse_asset, parse_assets
 
 
 class Asset(BaseAPI):
@@ -21,10 +22,20 @@ class Asset(BaseAPI):
         """
         Retrieves an asset by its ID.
         :param asset_id: The ID of the asset to retrieve.
-        :return: Asset details.
+        :return: AssetModel object.
         """
+        if not asset_id:
+            raise ValueError("asset_id is required")
+        if not isinstance(asset_id, str):
+            raise ValueError("asset_id must be a string")
+        
+        try:
+            uuid.UUID(asset_id)
+        except ValueError as exc:
+            raise ValueError("asset_id must be a valid UUID") from exc
+
         response = self._get(url=f"{self.__base_api}/{asset_id}")
-        return self._handle_response(response)
+        return parse_asset(self._handle_response(response))
 
     def add_asset(
         self,
@@ -34,7 +45,7 @@ class Asset(BaseAPI):
         type_id: str = None,
         _id: str = None,
         status_id: str = None,
-        excluded_from_auto_hyperlink: bool = False,
+        excluded_from_auto_hyperlinking: bool = False,
         type_public_id: str = None,
     ):
         """
@@ -45,15 +56,15 @@ class Asset(BaseAPI):
         :param type_id: Optional type ID for the asset.
         :param id: Optional ID for the asset.
         :param status_id: Optional status ID for the asset.
-        :param excluded_from_auto_hyperlink: Whether the asset is excluded from auto hyperlinking.
+        :param excluded_from_auto_hyperlinking: Whether the asset is excluded from auto hyperlinking.
         :param type_public_id: Optional public ID for the asset type.
-        :return: Details of the created asset.
+        :return: AssetModel of the created asset.
         """
         # Parameter type validation
         if not name or not domain_id:
             raise ValueError("Name and domain_id are required parameters.")
-        if not isinstance(excluded_from_auto_hyperlink, bool):
-            raise ValueError("excluded_from_auto_hyperlink must be a boolean value.")
+        if not isinstance(excluded_from_auto_hyperlinking, bool):
+            raise ValueError("excluded_from_auto_hyperlinking must be a boolean value.")
         if type_id and not isinstance(type_id, str):
             raise ValueError("type_id must be a string if provided.")
         if _id and not isinstance(_id, str):
@@ -80,11 +91,11 @@ class Asset(BaseAPI):
             "typeId": type_id,
             "id": _id,
             "statusId": status_id,
-            "excludedFromAutoHyperlink": excluded_from_auto_hyperlink,
+            "excludedFromAutoHyperlinking": excluded_from_auto_hyperlinking,
             "typePublicId": type_public_id
         }
         response = self._post(url=self.__base_api, data=data)
-        return self._handle_response(response)
+        return parse_asset(self._handle_response(response))
 
     def change_asset(
         self,
@@ -107,7 +118,7 @@ class Asset(BaseAPI):
         :param domain_id: Optional new domain ID.
         :param excluded_from_auto_hyperlinking: Optional auto-hyperlinking setting.
         :param type_public_id: Optional new type public ID.
-        :return: Updated asset details.
+        :return: AssetModel of the updated asset.
         """
         if not asset_id:
             raise ValueError("asset_id is required")
@@ -147,7 +158,7 @@ class Asset(BaseAPI):
         }
 
         response = self._patch(url=f"{self.__base_api}/{asset_id}", data=data)
-        return self._handle_response(response)
+        return parse_asset(self._handle_response(response))
 
     def update_asset_attribute(self, asset_id: str, attribute_id: str, value):
         """
@@ -377,6 +388,8 @@ class Asset(BaseAPI):
         community_id: str = None,
         asset_type_ids: list = None,
         domain_id: str = None,
+        name: str = None,
+        name_match_mode: str = "ANYWHERE",
         limit: int = 1000,
         offset: int = 0
     ):
@@ -385,9 +398,11 @@ class Asset(BaseAPI):
         :param community_id: Optional community ID to filter by.
         :param asset_type_ids: Optional list of asset type IDs to filter by.
         :param domain_id: Optional domain ID to filter by.
+        :param name: Optional name to filter by.
+        :param name_match_mode: Mode for name matching (ANYWHERE, START, END, EXACT).
         :param limit: Maximum number of results per page.
         :param offset: First result to retrieve.
-        :return: List of assets matching the criteria.
+        :return: AssetList matching the criteria.
         """
         params = {"limit": limit, "offset": offset}
 
@@ -421,8 +436,12 @@ class Asset(BaseAPI):
                 raise ValueError("domain_id must be a valid UUID") from exc
             params["domainId"] = domain_id
 
+        if name:
+            params["name"] = name
+            params["nameMatchMode"] = name_match_mode
+
         response = self._get(params=params)
-        return self._handle_response(response)
+        return parse_assets(self._handle_response(response))
 
     def get_asset_activities(self, asset_id: str, limit: int = 50):
         """
@@ -534,23 +553,18 @@ class Asset(BaseAPI):
         # 4. Get responsibilities
         if include_responsibilities:
             try:
-                import requests
-                url = f"{connector.api}/responsibilities"
-                params = {"resourceIds": asset_id, "limit": 50}
-                response = requests.get(url, auth=connector.auth, timeout=connector.timeout)
-                if response.status_code == 200:
-                    data = response.json()
-                    for resp in data.get('results', []):
-                        role = resp.get('role', {}).get('name', 'Unknown')
-                        owner = resp.get('owner', {})
-                        owner_name = f"{owner.get('firstName', '')} {owner.get('lastName', '')}".strip()
-                        if not owner_name:
-                            owner_name = owner.get('name', 'Unknown')
-                        responsibilities_list.append(ResponsibilitySummary(
-                            role=role,
-                            owner=owner_name,
-                            owner_id=owner.get('id')
-                        ))
+                resp_list = connector.responsibility.find_responsibilities(
+                    resource_ids=[asset_id],
+                    limit=50
+                )
+                for resp in resp_list:
+                    role_name = resp.role.name or "Unknown"
+                    owner_name = resp.owner.name or "Unknown"
+                    responsibilities_list.append(ResponsibilitySummary(
+                        role=role_name,
+                        owner=owner_name,
+                        owner_id=resp.owner.id
+                    ))
             except Exception:
                 pass  # Responsibilities are optional
 
@@ -614,11 +628,11 @@ class Asset(BaseAPI):
             "domain": profile.asset.domain_name,
             "domain_id": profile.asset.domain.id,
             "created_on": profile.asset.created_on,
-            "last_modified_on": profile["asset"].get("lastModifiedOn"),
+            "last_modified_on": profile.asset.last_modified_on,
         }
 
         # Add attributes with prefix
-        for attr_name, attr_value in profile.get("attributes", {}).items():
+        for attr_name, attr_value in profile.attributes.items():
             # Clean HTML from description
             if attr_name == "Description" and isinstance(attr_value, str):
                 import re
@@ -626,22 +640,22 @@ class Asset(BaseAPI):
             flat[f"attr_{attr_name.lower().replace(' ', '_')}"] = attr_value
 
         # Add relation counts
-        flat["relations_outgoing_count"] = profile["relations"].get("outgoing_count", 0)
-        flat["relations_incoming_count"] = profile["relations"].get("incoming_count", 0)
+        flat["relations_outgoing_count"] = profile.relations.outgoing_count
+        flat["relations_incoming_count"] = profile.relations.incoming_count
 
         # Add relation summaries
         outgoing_summary = []
-        for rel_type, targets in profile["relations"].get("outgoing", {}).items():
+        for rel_type, targets in profile.relations.outgoing.items():
             outgoing_summary.append(f"{rel_type}: {len(targets)}")
         flat["relations_outgoing_summary"] = "; ".join(outgoing_summary)
 
         incoming_summary = []
-        for rel_type, sources in profile["relations"].get("incoming", {}).items():
+        for rel_type, sources in profile.relations.incoming.items():
             incoming_summary.append(f"{rel_type}: {len(sources)}")
         flat["relations_incoming_summary"] = "; ".join(incoming_summary)
 
         # Add responsibilities
-        resp_list = [f"{r['role']}: {r['owner']}" for r in profile.get("responsibilities", [])]
+        resp_list = [f"{r.role}: {r.owner}" for r in profile.responsibilities]
         flat["responsibilities"] = "; ".join(resp_list)
 
         return flat

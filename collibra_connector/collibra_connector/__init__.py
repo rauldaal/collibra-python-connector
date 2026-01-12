@@ -121,9 +121,6 @@ from .models import (
     RelationModel,
     ResponsibilityModel,
     CommentModel,
-    # Search models
-    SearchResultModel,
-    SearchResource,
     # Workflow models
     WorkflowDefinitionModel,
     WorkflowInstanceModel,
@@ -141,6 +138,11 @@ from .models import (
     UserList,
     AttributeList,
     RelationList,
+    ResponsibilityList,
+    CommentList,
+    WorkflowDefinitionList,
+    WorkflowInstanceList,
+    WorkflowTaskList,
     SearchResults,
     # Factory functions
     parse_asset,
@@ -155,6 +157,16 @@ from .models import (
     parse_attributes,
     parse_relation,
     parse_relations,
+    parse_responsibility,
+    parse_responsibilities,
+    parse_comment,
+    parse_comments,
+    parse_workflow_definition,
+    parse_workflow_definitions,
+    parse_workflow_instance,
+    parse_workflow_instances,
+    parse_workflow_task,
+    parse_workflow_tasks,
     parse_search_results,
 )
 
@@ -213,7 +225,7 @@ from .testing import (
     MockDataStore,
 )
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 __all__ = [
     # Main connector
     "CollibraConnector",
@@ -275,6 +287,11 @@ __all__ = [
     "UserList",
     "AttributeList",
     "RelationList",
+    "ResponsibilityList",
+    "CommentList",
+    "WorkflowDefinitionList",
+    "WorkflowInstanceList",
+    "WorkflowTaskList",
     "SearchResults",
     # Factory functions
     "parse_asset",
@@ -289,6 +306,16 @@ __all__ = [
     "parse_attributes",
     "parse_relation",
     "parse_relations",
+    "parse_responsibility",
+    "parse_responsibilities",
+    "parse_comment",
+    "parse_comments",
+    "parse_workflow_definition",
+    "parse_workflow_definitions",
+    "parse_workflow_instance",
+    "parse_workflow_instances",
+    "parse_workflow_task",
+    "parse_workflow_tasks",
     "parse_search_results",
     # Lineage
     "LineageBuilder",

@@ -63,12 +63,25 @@ class ResourceReference(BaseCollibraModel):
     id: str
     resource_type: Optional[str] = Field(default=None, alias="resourceType")
     name: Optional[str] = None
+    user_name: Optional[str] = Field(default=None, alias="userName")
+    first_name: Optional[str] = Field(default=None, alias="firstName")
+    last_name: Optional[str] = Field(default=None, alias="lastName")
+
+    @property
+    def display_name(self) -> str:
+        """Get the most descriptive name available."""
+        if self.name:
+            return self.name
+        if self.first_name or self.last_name:
+            parts = [self.first_name, self.last_name]
+            return " ".join(p for p in parts if p)
+        return self.user_name or self.id
 
     def __str__(self) -> str:
-        return self.name or self.id
+        return self.display_name
 
     def __repr__(self) -> str:
-        return f"ResourceReference(id={self.id!r}, name={self.name!r})"
+        return f"ResourceReference(id={self.id!r}, name={self.display_name!r})"
 
 
 class TypedResourceReference(ResourceReference):
@@ -81,11 +94,11 @@ class NamedResource(BaseCollibraModel):
     """Base class for resources with id, name, and description."""
     id: str
     resource_type: Optional[str] = Field(default=None, alias="resourceType")
-    name: str
+    name: Optional[str] = None
     description: Optional[str] = None
 
     def __str__(self) -> str:
-        return self.name
+        return self.name or self.id
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(id={self.id!r}, name={self.name!r})"
@@ -306,6 +319,7 @@ class UserModel(NamedResource):
     last_modified_on: Optional[int] = Field(default=None, alias="lastModifiedOn")
     created_by: Optional[str] = Field(default=None, alias="createdBy")
     last_modified_by: Optional[str] = Field(default=None, alias="lastModifiedBy")
+    user_name: Optional[str] = Field(default=None, alias="userName")
     first_name: Optional[str] = Field(default=None, alias="firstName")
     last_name: Optional[str] = Field(default=None, alias="lastName")
     email_address: Optional[str] = Field(default=None, alias="emailAddress")
@@ -329,7 +343,7 @@ class UserModel(NamedResource):
     def full_name(self) -> str:
         """Get user's full name."""
         parts = [self.first_name, self.last_name]
-        return " ".join(p for p in parts if p) or self.name
+        return " ".join(p for p in parts if p) or self.name or self.user_name or "Unknown"
 
     @property
     def is_active(self) -> bool:
@@ -783,6 +797,11 @@ CommunityList = PaginatedResponseModel[CommunityModel]
 UserList = PaginatedResponseModel[UserModel]
 AttributeList = PaginatedResponseModel[AttributeModel]
 RelationList = PaginatedResponseModel[RelationModel]
+ResponsibilityList = PaginatedResponseModel[ResponsibilityModel]
+CommentList = PaginatedResponseModel[CommentModel]
+WorkflowDefinitionList = PaginatedResponseModel[WorkflowDefinitionModel]
+WorkflowInstanceList = PaginatedResponseModel[WorkflowInstanceModel]
+WorkflowTaskList = PaginatedResponseModel[WorkflowTaskModel]
 SearchResults = PaginatedResponseModel[SearchResultModel]
 
 
@@ -879,6 +898,86 @@ def parse_relations(data: Dict[str, Any]) -> RelationList:
     """Parse a paginated response into RelationList."""
     results = [RelationModel.model_validate(item) for item in data.get("results", [])]
     return PaginatedResponseModel[RelationModel](
+        results=results,
+        total=data.get("total", 0),
+        offset=data.get("offset", 0),
+        limit=data.get("limit", 0)
+    )
+
+
+def parse_responsibility(data: Dict[str, Any]) -> ResponsibilityModel:
+    """Parse a dictionary into a ResponsibilityModel."""
+    return ResponsibilityModel.model_validate(data)
+
+
+def parse_responsibilities(data: Dict[str, Any]) -> ResponsibilityList:
+    """Parse a paginated response into ResponsibilityList."""
+    results = [ResponsibilityModel.model_validate(item) for item in data.get("results", [])]
+    return PaginatedResponseModel[ResponsibilityModel](
+        results=results,
+        total=data.get("total", 0),
+        offset=data.get("offset", 0),
+        limit=data.get("limit", 0)
+    )
+
+
+def parse_comment(data: Dict[str, Any]) -> CommentModel:
+    """Parse a dictionary into a CommentModel."""
+    return CommentModel.model_validate(data)
+
+
+def parse_comments(data: Dict[str, Any]) -> CommentList:
+    """Parse a paginated response into CommentList."""
+    results = [CommentModel.model_validate(item) for item in data.get("results", [])]
+    return PaginatedResponseModel[CommentModel](
+        results=results,
+        total=data.get("total", 0),
+        offset=data.get("offset", 0),
+        limit=data.get("limit", 0)
+    )
+
+
+def parse_workflow_definition(data: Dict[str, Any]) -> WorkflowDefinitionModel:
+    """Parse a dictionary into a WorkflowDefinitionModel."""
+    return WorkflowDefinitionModel.model_validate(data)
+
+
+def parse_workflow_definitions(data: Dict[str, Any]) -> WorkflowDefinitionList:
+    """Parse a paginated response into WorkflowDefinitionList."""
+    results = [WorkflowDefinitionModel.model_validate(item) for item in data.get("results", [])]
+    return PaginatedResponseModel[WorkflowDefinitionModel](
+        results=results,
+        total=data.get("total", 0),
+        offset=data.get("offset", 0),
+        limit=data.get("limit", 0)
+    )
+
+
+def parse_workflow_instance(data: Dict[str, Any]) -> WorkflowInstanceModel:
+    """Parse a dictionary into a WorkflowInstanceModel."""
+    return WorkflowInstanceModel.model_validate(data)
+
+
+def parse_workflow_instances(data: Dict[str, Any]) -> WorkflowInstanceList:
+    """Parse a paginated response into WorkflowInstanceList."""
+    results = [WorkflowInstanceModel.model_validate(item) for item in data.get("results", [])]
+    return PaginatedResponseModel[WorkflowInstanceModel](
+        results=results,
+        total=data.get("total", 0),
+        offset=data.get("offset", 0),
+        limit=data.get("limit", 0)
+    )
+
+
+def parse_workflow_task(data: Dict[str, Any]) -> WorkflowTaskModel:
+    """Parse a dictionary into a WorkflowTaskModel."""
+    return WorkflowTaskModel.model_validate(data)
+
+
+def parse_workflow_tasks(data: Dict[str, Any]) -> WorkflowTaskList:
+    """Parse a paginated response into WorkflowTaskList."""
+    results = [WorkflowTaskModel.model_validate(item) for item in data.get("results", [])]
+    return PaginatedResponseModel[WorkflowTaskModel](
         results=results,
         total=data.get("total", 0),
         offset=data.get("offset", 0),

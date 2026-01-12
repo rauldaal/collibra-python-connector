@@ -9,6 +9,7 @@ import uuid
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 from .Base import BaseAPI
+from ..models import parse_attribute, parse_attributes
 
 if TYPE_CHECKING:
     pass
@@ -22,15 +23,15 @@ class Attribute(BaseAPI):
         super().__init__(connector)
         self.__base_api = connector.api + "/attributes"
 
-    def get_attributes(
+    def find_attributes(
         self,
         asset_id: str,
         type_ids: Optional[List[str]] = None,
         limit: int = 100,
         offset: int = 0
-    ) -> Dict[str, Any]:
+    ):
         """
-        Get all attributes for an asset.
+        Find attributes for an asset.
 
         Args:
             asset_id: The UUID of the asset.
@@ -39,12 +40,7 @@ class Attribute(BaseAPI):
             offset: Offset for pagination.
 
         Returns:
-            Dictionary with 'results' list of attributes.
-
-        Example:
-            >>> attrs = connector.attribute.get_attributes("asset-uuid")
-            >>> for attr in attrs['results']:
-            ...     print(f"{attr['type']['name']}: {attr['value']}")
+            Paginated list of attributes.
         """
         if not asset_id:
             raise ValueError("asset_id is required")
@@ -66,9 +62,13 @@ class Attribute(BaseAPI):
             params["typeIds"] = type_ids
 
         response = self._get(url=self.__base_api, params=params)
-        return self._handle_response(response)
+        return parse_attributes(self._handle_response(response))
 
-    def get_attribute(self, attribute_id: str) -> Dict[str, Any]:
+    def get_attributes(self, *args, **kwargs):
+        """Alias for find_attributes."""
+        return self.find_attributes(*args, **kwargs)
+
+    def get_attribute(self, attribute_id: str):
         """
         Get a specific attribute by ID.
 
@@ -87,14 +87,14 @@ class Attribute(BaseAPI):
             raise ValueError("attribute_id must be a valid UUID") from exc
 
         response = self._get(url=f"{self.__base_api}/{attribute_id}")
-        return self._handle_response(response)
+        return parse_attribute(self._handle_response(response))
 
     def add_attribute(
         self,
         asset_id: str,
         type_id: str,
         value: Any
-    ) -> Dict[str, Any]:
+    ):
         """
         Add an attribute to an asset.
 
@@ -122,13 +122,13 @@ class Attribute(BaseAPI):
         }
 
         response = self._post(url=self.__base_api, data=data)
-        return self._handle_response(response)
+        return parse_attribute(self._handle_response(response))
 
     def change_attribute(
         self,
         attribute_id: str,
         value: Any
-    ) -> Dict[str, Any]:
+    ):
         """
         Update an attribute value.
 
@@ -153,7 +153,7 @@ class Attribute(BaseAPI):
         }
 
         response = self._patch(url=f"{self.__base_api}/{attribute_id}", data=data)
-        return self._handle_response(response)
+        return parse_attribute(self._handle_response(response))
 
     def remove_attribute(self, attribute_id: str) -> Dict[str, Any]:
         """
@@ -196,9 +196,9 @@ class Attribute(BaseAPI):
         result = self.get_attributes(asset_id, limit=500)
         attrs_dict: Dict[str, Any] = {}
 
-        for attr in result.get('results', []):
-            type_name = attr.get('type', {}).get('name', 'Unknown')
-            value = attr.get('value')
+        for attr in result:
+            type_name = attr.type.name or "Unknown"
+            value = attr.value
             attrs_dict[type_name] = value
 
         return attrs_dict

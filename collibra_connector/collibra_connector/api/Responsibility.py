@@ -1,5 +1,6 @@
 import uuid
 from .Base import BaseAPI
+from ..models import parse_responsibility, parse_responsibilities
 
 
 class Responsibility(BaseAPI):
@@ -23,7 +24,7 @@ class Responsibility(BaseAPI):
             If None, creates global responsibility.
         :param resource_type: The type of the resource (e.g., Asset, Community, Domain, etc.).
         :param resource_discriminator: The discriminator for resource type. Valid values: "Community", "Domain", "Asset"
-        :return: The responsibility ID.
+        :return: The responsibility model.
         """
         # Validate required parameters
         if not role_id or not owner_id:
@@ -91,14 +92,13 @@ class Responsibility(BaseAPI):
             data["resourceDiscriminator"] = resource_discriminator
 
         response = self._post(url=self.__base_api, data=data)
-        result = self._handle_response(response)
-        return result.get("id")
+        return parse_responsibility(self._handle_response(response))
 
     def get_responsibility(self, responsibility_id: str):
         """
         Get details of a specific responsibility.
         :param responsibility_id: The ID of the responsibility.
-        :return: Responsibility details.
+        :return: Responsibility model.
         """
         if not responsibility_id:
             raise ValueError("responsibility_id is required")
@@ -111,7 +111,7 @@ class Responsibility(BaseAPI):
             raise ValueError("responsibility_id must be a valid UUID") from exc
 
         response = self._get(url=f"{self.__base_api}/{responsibility_id}")
-        return self._handle_response(response)
+        return parse_responsibility(self._handle_response(response))
 
     def delete_responsibility(self, responsibility_id: str):
         """
@@ -250,7 +250,7 @@ class Responsibility(BaseAPI):
             params["type"] = _type
 
         response = self._get(url=self.__base_api, params=params)
-        return self._handle_response(response)
+        return parse_responsibilities(self._handle_response(response))
 
     def get_asset_responsibilities(self, asset_id: str, role_ids: list = None):
         """
