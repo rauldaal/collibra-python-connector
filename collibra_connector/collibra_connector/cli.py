@@ -78,7 +78,7 @@ def format_output(data: Any, fmt: str) -> str:
 
 if CLICK_AVAILABLE:
     @click.group()
-    @click.version_option(version="1.1.0", prog_name="collibra-sdk")
+    @click.version_option(version="1.2.0", prog_name="collibra-sdk")
     @click.pass_context
     def cli(ctx: Context) -> None:
         """

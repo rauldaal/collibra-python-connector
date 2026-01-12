@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-01-12
+
+### Added
+- **Full Async Parity**: Added missing `User`, `Comment`, and `Workflow` modules to `AsyncCollibraConnector`.
+- **Enhanced Search API**: Added `search()` alias and ensured typed returns for all search methods.
+- **Robust Model Parsing**: Improved `ResourceReference` to automatically resolve display names from `userName`, `firstName`, or `lastName`.
+- **Improved Error Handling**: Added specific handling for HTTP 400 (Bad Request) and fail-fast local UUID validation.
+
+### Changed
+- **Type Safety**: Synchronous API methods now consistently return Pydantic models instead of dictionaries (Breaking Change).
+- **Naming Standardization**: Normalized all "hyperlink" parameters to `excluded_from_auto_hyperlinking`.
+
+### Fixed
+- **UserModel Parsing**: Fixed validation errors when the `name` field is missing from user responses.
+- **LineageBuilder**: Fixed compatibility issues with the new Pydantic return types.
+- **Helper Methods**: Fixed attribute and relation convenience methods to work with typed models.
+
 ## [1.1.0] - 2026-01-02
 
 ### Added
