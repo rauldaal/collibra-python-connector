@@ -547,7 +547,7 @@ class LineageBuilder:
                         asset_data["status_id"] = status_id
 
                     created = self.connector.asset.add_asset(**asset_data)
-                    asset_id = created.get("id")
+                    asset_id = created.id
                     result.assets[internal_id] = asset_id
                     result.assets_created += 1
 
@@ -611,7 +611,7 @@ class LineageBuilder:
                     target_id=target_id,
                     type_id=relation_type_id
                 )
-                relation_id = created.get("id")
+                relation_id = created.id
                 result.relations.append(relation_id)
                 result.relations_created += 1
 

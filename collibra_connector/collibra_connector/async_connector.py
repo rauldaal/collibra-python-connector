@@ -48,6 +48,16 @@ from .models import (
     AttributeList,
     RelationModel,
     RelationList,
+    ResponsibilityModel,
+    ResponsibilityList,
+    CommentModel,
+    CommentList,
+    WorkflowDefinitionModel,
+    WorkflowDefinitionList,
+    WorkflowInstanceModel,
+    WorkflowInstanceList,
+    WorkflowTaskModel,
+    WorkflowTaskList,
     SearchResults,
     SearchResultModel,
     AssetProfileModel,
@@ -66,6 +76,16 @@ from .models import (
     parse_attributes,
     parse_relation,
     parse_relations,
+    parse_responsibility,
+    parse_responsibilities,
+    parse_comment,
+    parse_comments,
+    parse_workflow_definition,
+    parse_workflow_definitions,
+    parse_workflow_instance,
+    parse_workflow_instances,
+    parse_workflow_task,
+    parse_workflow_tasks,
     parse_search_results,
 )
 from .api.Exceptions import (
@@ -355,11 +375,9 @@ class AsyncAssetAPI(AsyncBaseAPI):
         if isinstance(relations, Exception):
             relations = {"outgoing": {}, "incoming": {}, "outgoing_count": 0, "incoming_count": 0}
 
-        responsibilities = result_dict.get("responsibilities", [])
-        if isinstance(responsibilities, Exception):
-            responsibilities = []
-
-        # Convert relations to model
+        responsibilities = result_dict.get("responsibilities")
+        
+        # Build relations model
         relations_grouped = RelationsGrouped(
             outgoing={k: [RelationSummary(**r) for r in v] for k, v in relations.get("outgoing", {}).items()},
             incoming={k: [RelationSummary(**r) for r in v] for k, v in relations.get("incoming", {}).items()},
@@ -367,8 +385,15 @@ class AsyncAssetAPI(AsyncBaseAPI):
             incoming_count=relations.get("incoming_count", 0)
         )
 
-        # Convert responsibilities
-        resp_summaries = [ResponsibilitySummary(**r) for r in responsibilities]
+        # Build responsibilities
+        resp_summaries = []
+        if responsibilities and not isinstance(responsibilities, Exception):
+            for resp in responsibilities:
+                resp_summaries.append(ResponsibilitySummary(
+                    role=resp.role.name or "Unknown",
+                    owner=resp.owner.name or "Unknown",
+                    owner_id=resp.owner.id
+                ))
 
         return AssetProfileModel(
             asset=asset,
@@ -400,12 +425,16 @@ class AsyncAttributeAPI(AsyncBaseAPI):
         data = await self._get("/attributes", params=params)
         return parse_attributes(data)
 
+    async def find_attributes(self, *args, **kwargs):
+        """Alias for get_attributes."""
+        return await self.get_attributes(*args, **kwargs)
+
     async def get_attributes_as_dict(self, asset_id: str) -> Dict[str, Any]:
         """Get attributes as a simple name->value dict."""
         result = await self.get_attributes(asset_id, limit=500)
         return {
-            attr.type_name: attr.value
-            for attr in result.results
+            attr.type.name or "Unknown": attr.value
+            for attr in result
         }
 
     async def add_attribute(
@@ -592,13 +621,17 @@ class AsyncRelationAPI(AsyncBaseAPI):
                     result[direction_key][type_name].append({
                         "id": rel.id,
                         "target_id": rel.target.id,
-                        "target_name": rel.target.name
+                        "target_name": rel.target.name,
+                        "target_type": rel.target.resource_type, # Simplified for now as we don't have full type cache here yet
+                        "target_status": "N/A" # Status is not easily available without extra calls
                     })
                 else:
                     result[direction_key][type_name].append({
                         "id": rel.id,
                         "source_id": rel.source.id,
-                        "source_name": rel.source.name
+                        "source_name": rel.source.name,
+                        "source_type": rel.source.resource_type,
+                        "source_status": "N/A"
                     })
 
         return result
@@ -611,26 +644,65 @@ class AsyncResponsibilityAPI(AsyncBaseAPI):
         self,
         asset_id: str,
         limit: int = 50
-    ) -> List[Dict[str, Any]]:
+    ) -> ResponsibilityList:
         """Get responsibilities for an asset."""
         params = {"resourceIds": asset_id, "limit": limit}
         data = await self._get("/responsibilities", params=params)
+        return parse_responsibilities(data)
 
-        responsibilities = []
-        for resp in data.get("results", []):
-            role = resp.get("role", {}).get("name", "Unknown")
-            owner = resp.get("owner", {})
-            owner_name = f"{owner.get('firstName', '')} {owner.get('lastName', '')}".strip()
-            if not owner_name:
-                owner_name = owner.get("name", "Unknown")
 
-            responsibilities.append({
-                "role": role,
-                "owner": owner_name,
-                "owner_id": owner.get("id")
-            })
+class AsyncUserAPI(AsyncBaseAPI):
+    """Async User API."""
 
-        return responsibilities
+    async def get_user(self, user_id: str) -> UserModel:
+        """Get user by ID."""
+        data = await self._get(f"/users/{user_id}")
+        return parse_user(data)
+
+    async def find_users(
+        self,
+        name: Optional[str] = None,
+        limit: int = 100,
+        offset: int = 0
+    ) -> UserList:
+        """Find users with filters."""
+        params: Dict[str, Any] = {"limit": limit, "offset": offset}
+        if name:
+            params["name"] = name
+
+        data = await self._get("/users", params=params)
+        return parse_users(data)
+
+
+class AsyncCommentAPI(AsyncBaseAPI):
+    """Async Comment API."""
+
+    async def add_comment(self, asset_id: str, content: str) -> CommentModel:
+        """Add a comment to an asset."""
+        data = {
+            "content": content,
+            "baseResource": {"id": asset_id, "resourceType": "Asset"}
+        }
+        result = await self._post("/comments", data)
+        return parse_comment(result)
+
+    async def find_comments(self, **kwargs) -> CommentList:
+        """Find comments with filters."""
+        result = await self._get("/comments", params=kwargs)
+        return parse_comments(result)
+
+
+class AsyncWorkflowAPI(AsyncBaseAPI):
+    """Async Workflow API."""
+
+    async def find_tasks(self, **kwargs) -> WorkflowTaskList:
+        """Find workflow tasks."""
+        result = await self._get("/workflowTasks", params=kwargs)
+        return parse_workflow_tasks(result)
+
+    async def get_task_form_data(self, task_id: str) -> Dict[str, Any]:
+        """Get form data for a task."""
+        return await self._get(f"/workflowTasks/{task_id}/taskFormData")
 
 
 class AsyncSearchAPI(AsyncBaseAPI):
@@ -678,6 +750,10 @@ class AsyncSearchAPI(AsyncBaseAPI):
 
         result = await self._post("/search", data)
         return parse_search_results(result)
+
+    async def search(self, *args, **kwargs):
+        """Alias for find()."""
+        return await self.find(*args, **kwargs)
 
     async def find_assets(
         self,
@@ -779,8 +855,11 @@ class AsyncCollibraConnector:
         self.attribute = AsyncAttributeAPI(self)
         self.domain = AsyncDomainAPI(self)
         self.community = AsyncCommunityAPI(self)
+        self.user = AsyncUserAPI(self)
         self.relation = AsyncRelationAPI(self)
         self.responsibility = AsyncResponsibilityAPI(self)
+        self.comment = AsyncCommentAPI(self)
+        self.workflow = AsyncWorkflowAPI(self)
         self.search = AsyncSearchAPI(self)
 
     @property
@@ -928,3 +1007,8 @@ class AsyncCollibraConnector:
                 return await coro
 
         return await asyncio.gather(*[limited(c) for c in coros])
+
+    def get_version(self) -> str:
+        """Get library version."""
+        from . import __version__
+        return __version__

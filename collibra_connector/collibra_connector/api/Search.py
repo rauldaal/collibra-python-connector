@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional
 from .Base import BaseAPI
+from ..models import parse_search_results
 
 
 class Search(BaseAPI):
@@ -21,7 +22,7 @@ class Search(BaseAPI):
         sort_options: Optional[Dict[str, Any]] = None,
         highlight_options: Optional[Dict[str, Any]] = None,
         search_fields: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
+    ):
         """
         Perform a search query.
 
@@ -35,7 +36,7 @@ class Search(BaseAPI):
             search_fields: List of fields to search in.
 
         Returns:
-            Search results dictionary with 'results', 'total', etc.
+            Search results model.
         """
         data = {
             "keywords": query,
@@ -59,7 +60,13 @@ class Search(BaseAPI):
         # But maybe better to leave it open. The API defaults to all.
         
         response = self._post(url=self.__base_api, data=data)
-        return self._handle_response(response)
+        return parse_search_results(self._handle_response(response))
+
+    def search(self, query: str, limit: int = 10, offset: int = 0, **kwargs):
+        """
+        Alias for find() to match common naming patterns.
+        """
+        return self.find(query=query, limit=limit, offset=offset, **kwargs)
 
     def find_assets(
         self,
@@ -70,7 +77,7 @@ class Search(BaseAPI):
         domain_ids: Optional[List[str]] = None,
         community_ids: Optional[List[str]] = None,
         status_ids: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
+    ):
         """
         Helper specifically for searching assets.
         

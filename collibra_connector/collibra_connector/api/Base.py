@@ -137,6 +137,8 @@ class BaseAPI:
             raise ForbiddenError("Forbidden access - insufficient permissions: " + response.text)
         elif response.status_code == 404:
             raise NotFoundError("The specified resource was not found: " + response.text)
+        elif response.status_code == 400:
+            raise CollibraAPIError("Bad Request - Invalid parameters: " + response.text, response.status_code)
         elif response.status_code >= 500:
             raise ServerError("Internal server error - something went wrong on the server: " + response.text)
         else:
