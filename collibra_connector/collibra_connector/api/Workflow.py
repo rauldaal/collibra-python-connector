@@ -10,15 +10,26 @@ class Workflow(BaseAPI):
     def start_workflow_instance(
         self,
         workflow_definition_id: str,
-        asset_id: str = None,
+        business_item_ids: list[str] = None,
+        business_item_type: str = None,
+        form_properties: dict[str, str] = None,
+        guest_user_id: str = None,
+        send_notification: bool = False,
         return_all: bool = False
     ):
         """
-        Start a workflow instance.
-        :param workflow_definition_id: The ID of the workflow definition.
-        :param asset_id: Optional asset ID to associate with the workflow.
+        Start multiple workflow instances based on the provided request.
+
+        :param workflow_definition_id: The ID of the workflow definition (required).
+        :param business_item_ids: The list of IDs for the business items (optional).
+        :param business_item_type: The resource type of the passed in business items.
+                                   Allowed values: ASSET, DOMAIN, COMMUNITY, GLOBAL, USER (optional).
+        :param form_properties: The properties of the workflow as a dictionary (optional).
+        :param guest_user_id: The ID of the guest user starting the workflow (optional).
+        :param send_notification: Whether a mail notification on starting the workflows should be sent.
+                                 This notification is only used in the asynchronous api version (optional).
         :param return_all: Whether to return all workflow data or just the ID.
-        :return: Workflow instance ID or full response data.
+        :return: Workflow instance ID or full response data (array of workflow instances).
         """
         if not workflow_definition_id:
             raise ValueError("workflow_definition_id is required")
@@ -32,21 +43,44 @@ class Workflow(BaseAPI):
 
         data = {
             "workflowDefinitionId": workflow_definition_id,
-            "sendNotification": True
+            "sendNotification": send_notification
         }
 
-        if asset_id:
-            if not isinstance(asset_id, str):
-                raise ValueError("asset_id must be a string")
-            try:
-                uuid.UUID(asset_id)
-            except ValueError as exc:
-                raise ValueError("asset_id must be a valid UUID") from exc
+        if business_item_ids is not None:
+            if not isinstance(business_item_ids, list):
+                raise ValueError("business_item_ids must be a list")
+            if not all(isinstance(item_id, str) for item_id in business_item_ids):
+                raise ValueError("All business_item_ids must be strings")
+            for item_id in business_item_ids:
+                try:
+                    uuid.UUID(item_id)
+                except ValueError as exc:
+                    raise ValueError(f"business_item_id '{item_id}' must be a valid UUID") from exc
+            data["businessItemIds"] = business_item_ids
 
-            data.update({
-                "businessItemIds": [asset_id],
-                "businessItemType": "ASSET",
-            })
+        if business_item_type is not None:
+            if not isinstance(business_item_type, str):
+                raise ValueError("business_item_type must be a string")
+            valid_types = ["ASSET", "DOMAIN", "COMMUNITY", "GLOBAL", "USER"]
+            if business_item_type not in valid_types:
+                raise ValueError(f"business_item_type must be one of: {', '.join(valid_types)}")
+            data["businessItemType"] = business_item_type
+
+        if form_properties is not None:
+            if not isinstance(form_properties, dict):
+                raise ValueError("form_properties must be a dictionary")
+            if not all(isinstance(k, str) and isinstance(v, str) for k, v in form_properties.items()):
+                raise ValueError("All form_properties keys and values must be strings")
+            data["formProperties"] = form_properties
+
+        if guest_user_id is not None:
+            if not isinstance(guest_user_id, str):
+                raise ValueError("guest_user_id must be a string")
+            try:
+                uuid.UUID(guest_user_id)
+            except ValueError as exc:
+                raise ValueError("guest_user_id must be a valid UUID") from exc
+            data["guestUserId"] = guest_user_id
 
         response = self._post(url=f"{self.__base_api}/workflowInstances", data=data)
         result = self._handle_response(response)
