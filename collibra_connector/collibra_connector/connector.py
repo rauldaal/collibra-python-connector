@@ -16,17 +16,18 @@ from requests.auth import HTTPBasicAuth
 from .api import (
     Asset,
     Attribute,
+    Comment,
     Community,
     Domain,
-    User,
-    Responsibility,
-    Workflow,
     Metadata,
-    Comment,
-    Relation,
     OutputModule,
+    Relation,
+    Responsibility,
+    Search,
+    User,
+    UserGroup,
     Utils,
-    Search
+    Workflow,
 )
 
 if TYPE_CHECKING:
@@ -85,7 +86,7 @@ class CollibraConnector:
     ) -> None:
         """
         Initialize the CollibraConnector with API URL and authentication credentials.
-        
+
         Credentials can be provided as arguments or via environment variables:
         COLLIBRA_URL, COLLIBRA_USERNAME, COLLIBRA_PASSWORD.
 
@@ -130,18 +131,19 @@ class CollibraConnector:
         # Initialize all API classes
         self.asset: Asset = Asset(self)
         self.attribute: Attribute = Attribute(self)
+        self.comment: Comment = Comment(self)
         self.community: Community = Community(self)
         self.domain: Domain = Domain(self)
-        self.user: User = User(self)
         self.responsibility: Responsibility = Responsibility(self)
-        self.workflow: Workflow = Workflow(self)
         self.metadata: Metadata = Metadata(self)
-        self.comment: Comment = Comment(self)
-        self.relation: Relation = Relation(self)
         self.output_module: OutputModule = OutputModule(self)
-        self.utils: Utils = Utils(self)
+        self.relation: Relation = Relation(self)
         self.search: Search = Search(self)
-        
+        self.user: User = User(self)
+        self.user_group: UserGroup = UserGroup(self)
+        self.utils: Utils = Utils(self)
+        self.workflow: Workflow = Workflow(self)
+
         # Initialize Logger without basicConfig
         self.logger: logging.Logger = logging.getLogger(__name__)
         self.logger.addHandler(logging.NullHandler())

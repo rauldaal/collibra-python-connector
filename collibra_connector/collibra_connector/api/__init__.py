@@ -1,29 +1,31 @@
 from .Asset import Asset
 from .Attribute import Attribute
+from .Comment import Comment
 from .Community import Community
 from .Domain import Domain
-from .User import User
-from .Responsibility import Responsibility
-from .Workflow import Workflow
 from .Metadata import Metadata
-from .Comment import Comment
-from .Relation import Relation
 from .OutputModule import OutputModule
-from .Utils import Utils
+from .Relation import Relation
+from .Responsibility import Responsibility
 from .Search import Search
+from .User import User
+from .UserGroup import UserGroup
+from .Utils import Utils
+from .Workflow import Workflow
 
 __all__ = [
     "Asset",
     "Attribute",
+    "Comment",
     "Community",
     "Domain",
-    "User",
-    "Responsibility",
-    "Workflow",
     "Metadata",
-    "Comment",
-    "Relation",
     "OutputModule",
+    "Relation",
+    "Responsibility",
+    "Search",
+    "User",
+    "UserGroup",
     "Utils",
-    "Search"
+    "Workflow",
 ]
