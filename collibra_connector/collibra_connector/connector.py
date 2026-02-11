@@ -14,6 +14,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 
 from .api import (
+    Activity,
     Asset,
     Attribute,
     Comment,
@@ -43,6 +44,7 @@ class CollibraConnector:
     connection management, and provides access to all API modules.
 
     Attributes:
+        activity: Activity API operations
         asset: Asset API operations
         community: Community API operations
         domain: Domain API operations
@@ -129,6 +131,7 @@ class CollibraConnector:
         self.__session: Optional[requests.Session] = None
 
         # Initialize all API classes
+        self.activity: Activity = Activity(self)
         self.asset: Asset = Asset(self)
         self.attribute: Attribute = Attribute(self)
         self.comment: Comment = Comment(self)

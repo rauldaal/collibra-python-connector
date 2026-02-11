@@ -1,3 +1,4 @@
+from .Activity import Activity
 from .Asset import Asset
 from .Attribute import Attribute
 from .Comment import Comment
@@ -14,6 +15,7 @@ from .Utils import Utils
 from .Workflow import Workflow
 
 __all__ = [
+    "Activity",
     "Asset",
     "Attribute",
     "Comment",
