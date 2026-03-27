@@ -5,6 +5,56 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-03-27
+
+### Added
+
+#### Full Swagger API Coverage
+- Implemented Python modules for all remaining API endpoint groups defined in the Collibra Swagger spec (v2.0), expanding from 15 to 48 API modules.
+- New modules added to `collibra_connector.api`:
+  - `Application` — `GET /application/info`
+  - `AssetType` — Full CRUD for `/assetTypes` including bulk ops, parent/sub-type trees, and public ID lookup
+  - `Assignment` — `/assignments` endpoints: per-asset/type lookups, available type queries, add/change/remove
+  - `Attachment` — `/attachments` CRUD including binary content download
+  - `AttributeType` — Full CRUD for `/attributeTypes` including bulk ops and name/publicId lookups
+  - `Auth` — `/auth/sessions`: login, get current session, logout, heartbeat
+  - `ComplexRelation` — Full CRUD for `/complexRelations` plus CSV/Excel export (job and direct file variants)
+  - `ComplexRelationType` — Full CRUD for `/complexRelationTypes` including public ID lookup
+  - `DataQualityRule` — Full CRUD for `/dataQualityRules`
+  - `DiagramPicture` — `POST /diagramPictures`
+  - `DomainType` — Full CRUD for `/domainTypes` including bulk ops, sub-type trees, and public ID lookup
+  - `File` — `/files`: upload, download, get info, delete (single and bulk)
+  - `Issue` — `/issues`: find, add, move
+  - `JdbcDriver` — `GET /jdbc`
+  - `Job` — `/jobs`: find, get, cancel, plus `wait_for_job` convenience helper
+  - `License` — `GET /license/capabilities`
+  - `Mapping` — Full CRUD for `/mappings` including external-entity and mapped-resource lookups, bulk ops, and removal jobs
+  - `NavigationStatistics` — `/navigation/most_viewed` and `/navigation/recently_viewed`
+  - `Rating` — Full CRUD for `/ratings`
+  - `RelationType` — Full CRUD for `/relationTypes` including bulk ops and public ID lookup
+  - `Reporting` — `/reporting/insights/download` and `/reporting/insights/directDownload`
+  - `Role` — Full CRUD for `/roles`
+  - `SAML` — `/security/saml`: get SP metadata, change/delete certificate
+  - `Scope` — Full CRUD for `/scopes` including public ID lookup
+  - `Status` — Full CRUD for `/statuses` including bulk ops and name lookup
+  - `Tag` — Full tag management: find, get, get by asset, exists check, change, remove (single/bulk), merge
+  - `Trait` — `/traits`: find, get, get by public ID, change
+  - `TraitAssignment` — `/traitAssignments`: get by trait ID and by trait public ID
+  - `Validation` — `/validation`: find results, validate, validate in job
+  - `ViewPermission` — Full CRUD for `/viewPermissions`
+  - `WorkflowDefinition` — Full CRUD for `/workflowDefinitions` including XML/diagram retrieval, start events, form data, and assignment rules
+  - `WorkflowInstance` — `/workflowInstances`: find, start, start in job, cancel, get diagram, send message event
+  - `WorkflowTask` — `/workflowTasks`: find, get, get form data, complete, cancel, reassign
+- All new modules follow the established `BaseAPI` pattern with UUID validation, range checks, and typed error handling.
+- `CollibraConnector` now exposes all 48 API modules as typed instance attributes (e.g., `connector.asset_type`, `connector.workflow_instance`).
+
+### Changed
+- Version bumped to 1.3.0
+- `api/__init__.py` updated to export all 48 modules
+- `connector.py` import block and `__init__` updated to initialise all new module instances
+
+---
+
 ## [1.1.0] - 2026-01-02
 
 ### Added

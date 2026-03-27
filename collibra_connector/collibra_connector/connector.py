@@ -15,20 +15,53 @@ from requests.auth import HTTPBasicAuth
 
 from .api import (
     Activity,
+    Application,
     Asset,
+    AssetType,
+    Assignment,
+    Attachment,
     Attribute,
+    AttributeType,
+    Auth,
     Comment,
     Community,
+    ComplexRelation,
+    ComplexRelationType,
+    DataQualityRule,
+    DiagramPicture,
     Domain,
+    DomainType,
+    File,
+    Issue,
+    JdbcDriver,
+    Job,
+    License,
+    Mapping,
     Metadata,
+    NavigationStatistics,
     OutputModule,
+    Rating,
     Relation,
+    RelationType,
+    Reporting,
     Responsibility,
+    Role,
+    SAML,
+    Scope,
     Search,
+    Status,
+    Tag,
+    Trait,
+    TraitAssignment,
     User,
     UserGroup,
     Utils,
+    Validation,
+    ViewPermission,
     Workflow,
+    WorkflowDefinition,
+    WorkflowInstance,
+    WorkflowTask,
 )
 
 if TYPE_CHECKING:
@@ -132,20 +165,53 @@ class CollibraConnector:
 
         # Initialize all API classes
         self.activity: Activity = Activity(self)
+        self.application: Application = Application(self)
         self.asset: Asset = Asset(self)
+        self.asset_type: AssetType = AssetType(self)
+        self.assignment: Assignment = Assignment(self)
+        self.attachment: Attachment = Attachment(self)
         self.attribute: Attribute = Attribute(self)
+        self.attribute_type: AttributeType = AttributeType(self)
+        self.auth: Auth = Auth(self)
         self.comment: Comment = Comment(self)
         self.community: Community = Community(self)
+        self.complex_relation: ComplexRelation = ComplexRelation(self)
+        self.complex_relation_type: ComplexRelationType = ComplexRelationType(self)
+        self.data_quality_rule: DataQualityRule = DataQualityRule(self)
+        self.diagram_picture: DiagramPicture = DiagramPicture(self)
         self.domain: Domain = Domain(self)
-        self.responsibility: Responsibility = Responsibility(self)
+        self.domain_type: DomainType = DomainType(self)
+        self.file: File = File(self)
+        self.issue: Issue = Issue(self)
+        self.jdbc_driver: JdbcDriver = JdbcDriver(self)
+        self.job: Job = Job(self)
+        self.license: License = License(self)
+        self.mapping: Mapping = Mapping(self)
         self.metadata: Metadata = Metadata(self)
+        self.navigation_statistics: NavigationStatistics = NavigationStatistics(self)
         self.output_module: OutputModule = OutputModule(self)
+        self.rating: Rating = Rating(self)
         self.relation: Relation = Relation(self)
+        self.relation_type: RelationType = RelationType(self)
+        self.reporting: Reporting = Reporting(self)
+        self.responsibility: Responsibility = Responsibility(self)
+        self.role: Role = Role(self)
+        self.saml: SAML = SAML(self)
+        self.scope: Scope = Scope(self)
         self.search: Search = Search(self)
+        self.status: Status = Status(self)
+        self.tag: Tag = Tag(self)
+        self.trait: Trait = Trait(self)
+        self.trait_assignment: TraitAssignment = TraitAssignment(self)
         self.user: User = User(self)
         self.user_group: UserGroup = UserGroup(self)
         self.utils: Utils = Utils(self)
+        self.validation: Validation = Validation(self)
+        self.view_permission: ViewPermission = ViewPermission(self)
         self.workflow: Workflow = Workflow(self)
+        self.workflow_definition: WorkflowDefinition = WorkflowDefinition(self)
+        self.workflow_instance: WorkflowInstance = WorkflowInstance(self)
+        self.workflow_task: WorkflowTask = WorkflowTask(self)
 
         # Initialize Logger without basicConfig
         self.logger: logging.Logger = logging.getLogger(__name__)
