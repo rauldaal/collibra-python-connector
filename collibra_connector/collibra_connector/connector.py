@@ -172,7 +172,7 @@ class CollibraConnector:
         self.attachment: Attachment = Attachment(self)
         self.attribute: Attribute = Attribute(self)
         self.attribute_type: AttributeType = AttributeType(self)
-        self.auth: Auth = Auth(self)
+        self.auth_api: Auth = Auth(self)
         self.comment: Comment = Comment(self)
         self.community: Community = Community(self)
         self.complex_relation: ComplexRelation = ComplexRelation(self)
