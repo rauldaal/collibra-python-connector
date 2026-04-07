@@ -81,6 +81,11 @@ Testing:
 """
 
 from .connector import CollibraConnector
+# from .query_builder import (
+#     OutputModuleQueryBuilder,
+#     ResourceBuilder,
+#     FilterBuilder,
+# )
 from .api.Exceptions import (
     CollibraAPIError,
     UnauthorizedError,
