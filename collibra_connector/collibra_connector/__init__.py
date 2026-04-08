@@ -88,232 +88,232 @@ from .api.Exceptions import (
     NotFoundError,
     ServerError,
 )
-from .helpers import (
-    Paginator,
-    PaginatedResponse,
-    BatchProcessor,
-    BatchResult,
-    CachedMetadata,
-    DataTransformer,
-    DataFrameExporter,
-    timed_cache,
-)
-from .models import (
-    # Base classes
-    BaseCollibraModel,
-    ResourceReference,
-    NamedResource,
-    TimestampMixin,
-    # Core models
-    AssetModel,
-    DomainModel,
-    CommunityModel,
-    UserModel,
-    StatusModel,
-    # Type models
-    AssetTypeModel,
-    DomainTypeModel,
-    AttributeTypeModel,
-    RelationTypeModel,
-    RoleModel,
-    # Data models
-    AttributeModel,
-    RelationModel,
-    ResponsibilityModel,
-    CommentModel,
-    # Search models
-    SearchResultModel,
-    SearchResource,
-    # Workflow models
-    WorkflowDefinitionModel,
-    WorkflowInstanceModel,
-    WorkflowTaskModel,
-    # Profile models
-    AssetProfileModel,
-    RelationsGrouped,
-    RelationSummary,
-    ResponsibilitySummary,
-    # Paginated responses
-    PaginatedResponseModel,
-    AssetList,
-    DomainList,
-    CommunityList,
-    UserList,
-    AttributeList,
-    RelationList,
-    SearchResults,
-    # Factory functions
-    parse_asset,
-    parse_assets,
-    parse_domain,
-    parse_domains,
-    parse_community,
-    parse_communities,
-    parse_user,
-    parse_users,
-    parse_attribute,
-    parse_attributes,
-    parse_relation,
-    parse_relations,
-    parse_search_results,
-)
+# from .helpers import (
+#     Paginator,
+#     PaginatedResponse,
+#     BatchProcessor,
+#     BatchResult,
+#     CachedMetadata,
+#     DataTransformer,
+#     DataFrameExporter,
+#     timed_cache,
+# )
+# from .models import (
+#     # Base classes
+#     BaseCollibraModel,
+#     ResourceReference,
+#     NamedResource,
+#     TimestampMixin,
+#     # Core models
+#     AssetModel,
+#     DomainModel,
+#     CommunityModel,
+#     UserModel,
+#     StatusModel,
+#     # Type models
+#     AssetTypeModel,
+#     DomainTypeModel,
+#     AttributeTypeModel,
+#     RelationTypeModel,
+#     RoleModel,
+#     # Data models
+#     AttributeModel,
+#     RelationModel,
+#     ResponsibilityModel,
+#     CommentModel,
+#     # Search models
+#     SearchResultModel,
+#     SearchResource,
+#     # Workflow models
+#     WorkflowDefinitionModel,
+#     WorkflowInstanceModel,
+#     WorkflowTaskModel,
+#     # Profile models
+#     AssetProfileModel,
+#     RelationsGrouped,
+#     RelationSummary,
+#     ResponsibilitySummary,
+#     # Paginated responses
+#     PaginatedResponseModel,
+#     AssetList,
+#     DomainList,
+#     CommunityList,
+#     UserList,
+#     AttributeList,
+#     RelationList,
+#     SearchResults,
+#     # Factory functions
+#     parse_asset,
+#     parse_assets,
+#     parse_domain,
+#     parse_domains,
+#     parse_community,
+#     parse_communities,
+#     parse_user,
+#     parse_users,
+#     parse_attribute,
+#     parse_attributes,
+#     parse_relation,
+#     parse_relations,
+#     parse_search_results,
+# )
 
-# Async connector (optional - requires httpx)
-try:
-    from .async_connector import AsyncCollibraConnector
-except ImportError:
-    AsyncCollibraConnector = None  # type: ignore
+# # Async connector (optional - requires httpx)
+# try:
+#     from .async_connector import AsyncCollibraConnector
+# except ImportError:
+#     AsyncCollibraConnector = None  # type: ignore
 
-# Lineage builder
-from .lineage import (
-    LineageBuilder,
-    LineageNode,
-    LineageEdge,
-    LineageCommitResult,
-    LineageDirection,
-    LineageRelationType,
-)
+# # Lineage builder
+# from .lineage import (
+#     LineageBuilder,
+#     LineageNode,
+#     LineageEdge,
+#     LineageCommitResult,
+#     LineageDirection,
+#     LineageRelationType,
+# )
 
-# Telemetry (optional - requires opentelemetry)
-try:
-    from .telemetry import (
-        enable_telemetry,
-        disable_telemetry,
-        is_telemetry_available,
-        is_telemetry_enabled,
-        traced,
-        traced_async,
-        span,
-        TracedCollibraConnector,
-        get_current_trace_id,
-        get_current_span_id,
-        add_span_attributes,
-        record_exception,
-    )
-except ImportError:
-    enable_telemetry = None  # type: ignore
-    disable_telemetry = None  # type: ignore
-    is_telemetry_available = lambda: False  # type: ignore
-    is_telemetry_enabled = lambda: False  # type: ignore
-    traced = None  # type: ignore
-    traced_async = None  # type: ignore
-    span = None  # type: ignore
-    TracedCollibraConnector = None  # type: ignore
-    get_current_trace_id = None  # type: ignore
-    get_current_span_id = None  # type: ignore
-    add_span_attributes = None  # type: ignore
-    record_exception = None  # type: ignore
+# # Telemetry (optional - requires opentelemetry)
+# try:
+#     from .telemetry import (
+#         enable_telemetry,
+#         disable_telemetry,
+#         is_telemetry_available,
+#         is_telemetry_enabled,
+#         traced,
+#         traced_async,
+#         span,
+#         TracedCollibraConnector,
+#         get_current_trace_id,
+#         get_current_span_id,
+#         add_span_attributes,
+#         record_exception,
+#     )
+# except ImportError:
+#     enable_telemetry = None  # type: ignore
+#     disable_telemetry = None  # type: ignore
+#     is_telemetry_available = lambda: False  # type: ignore
+#     is_telemetry_enabled = lambda: False  # type: ignore
+#     traced = None  # type: ignore
+#     traced_async = None  # type: ignore
+#     span = None  # type: ignore
+#     TracedCollibraConnector = None  # type: ignore
+#     get_current_trace_id = None  # type: ignore
+#     get_current_span_id = None  # type: ignore
+#     add_span_attributes = None  # type: ignore
+#     record_exception = None  # type: ignore
 
-# Testing utilities
-from .testing import (
-    MockCollibraConnector,
-    mock_collibra,
-    mock_collibra_context,
-    CollibraTestCase,
-    MockDataStore,
-)
+# # Testing utilities
+# from .testing import (
+#     MockCollibraConnector,
+#     mock_collibra,
+#     mock_collibra_context,
+#     CollibraTestCase,
+#     MockDataStore,
+# )
 
 __version__ = "1.1.0"
 __all__ = [
     # Main connector
     "CollibraConnector",
-    "AsyncCollibraConnector",
+    # "AsyncCollibraConnector",
     # Exceptions
     "CollibraAPIError",
     "UnauthorizedError",
     "ForbiddenError",
     "NotFoundError",
     "ServerError",
-    # Helpers
-    "Paginator",
-    "PaginatedResponse",
-    "BatchProcessor",
-    "BatchResult",
-    "CachedMetadata",
-    "DataTransformer",
-    "DataFrameExporter",
-    "timed_cache",
-    # Base models
-    "BaseCollibraModel",
-    "ResourceReference",
-    "NamedResource",
-    "TimestampMixin",
-    # Core models
-    "AssetModel",
-    "DomainModel",
-    "CommunityModel",
-    "UserModel",
-    "StatusModel",
-    # Type models
-    "AssetTypeModel",
-    "DomainTypeModel",
-    "AttributeTypeModel",
-    "RelationTypeModel",
-    "RoleModel",
-    # Data models
-    "AttributeModel",
-    "RelationModel",
-    "ResponsibilityModel",
-    "CommentModel",
-    # Search models
-    "SearchResultModel",
-    "SearchResource",
-    # Workflow models
-    "WorkflowDefinitionModel",
-    "WorkflowInstanceModel",
-    "WorkflowTaskModel",
-    # Profile models
-    "AssetProfileModel",
-    "RelationsGrouped",
-    "RelationSummary",
-    "ResponsibilitySummary",
-    # Paginated responses
-    "PaginatedResponseModel",
-    "AssetList",
-    "DomainList",
-    "CommunityList",
-    "UserList",
-    "AttributeList",
-    "RelationList",
-    "SearchResults",
-    # Factory functions
-    "parse_asset",
-    "parse_assets",
-    "parse_domain",
-    "parse_domains",
-    "parse_community",
-    "parse_communities",
-    "parse_user",
-    "parse_users",
-    "parse_attribute",
-    "parse_attributes",
-    "parse_relation",
-    "parse_relations",
-    "parse_search_results",
-    # Lineage
-    "LineageBuilder",
-    "LineageNode",
-    "LineageEdge",
-    "LineageCommitResult",
-    "LineageDirection",
-    "LineageRelationType",
-    # Telemetry
-    "enable_telemetry",
-    "disable_telemetry",
-    "is_telemetry_available",
-    "is_telemetry_enabled",
-    "traced",
-    "traced_async",
-    "span",
-    "TracedCollibraConnector",
-    "get_current_trace_id",
-    "get_current_span_id",
-    "add_span_attributes",
-    "record_exception",
-    # Testing
-    "MockCollibraConnector",
-    "mock_collibra",
-    "mock_collibra_context",
-    "CollibraTestCase",
-    "MockDataStore",
+    # # Helpers
+    # "Paginator",
+    # "PaginatedResponse",
+    # "BatchProcessor",
+    # "BatchResult",
+    # "CachedMetadata",
+    # "DataTransformer",
+    # "DataFrameExporter",
+    # "timed_cache",
+    # # Base models
+    # "BaseCollibraModel",
+    # "ResourceReference",
+    # "NamedResource",
+    # "TimestampMixin",
+    # # Core models
+    # "AssetModel",
+    # "DomainModel",
+    # "CommunityModel",
+    # "UserModel",
+    # "StatusModel",
+    # # Type models
+    # "AssetTypeModel",
+    # "DomainTypeModel",
+    # "AttributeTypeModel",
+    # "RelationTypeModel",
+    # "RoleModel",
+    # # Data models
+    # "AttributeModel",
+    # "RelationModel",
+    # "ResponsibilityModel",
+    # "CommentModel",
+    # # Search models
+    # "SearchResultModel",
+    # "SearchResource",
+    # # Workflow models
+    # "WorkflowDefinitionModel",
+    # "WorkflowInstanceModel",
+    # "WorkflowTaskModel",
+    # # Profile models
+    # "AssetProfileModel",
+    # "RelationsGrouped",
+    # "RelationSummary",
+    # "ResponsibilitySummary",
+    # # Paginated responses
+    # "PaginatedResponseModel",
+    # "AssetList",
+    # "DomainList",
+    # "CommunityList",
+    # "UserList",
+    # "AttributeList",
+    # "RelationList",
+    # "SearchResults",
+    # # Factory functions
+    # "parse_asset",
+    # "parse_assets",
+    # "parse_domain",
+    # "parse_domains",
+    # "parse_community",
+    # "parse_communities",
+    # "parse_user",
+    # "parse_users",
+    # "parse_attribute",
+    # "parse_attributes",
+    # "parse_relation",
+    # "parse_relations",
+    # "parse_search_results",
+    # # Lineage
+    # "LineageBuilder",
+    # "LineageNode",
+    # "LineageEdge",
+    # "LineageCommitResult",
+    # "LineageDirection",
+    # "LineageRelationType",
+    # # Telemetry
+    # "enable_telemetry",
+    # "disable_telemetry",
+    # "is_telemetry_available",
+    # "is_telemetry_enabled",
+    # "traced",
+    # "traced_async",
+    # "span",
+    # "TracedCollibraConnector",
+    # "get_current_trace_id",
+    # "get_current_span_id",
+    # "add_span_attributes",
+    # "record_exception",
+    # # Testing
+    # "MockCollibraConnector",
+    # "mock_collibra",
+    # "mock_collibra_context",
+    # "CollibraTestCase",
+    # "MockDataStore",
 ]
