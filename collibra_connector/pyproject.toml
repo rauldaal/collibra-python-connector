@@ -1,6 +1,6 @@
 [project]
 name = "collibra-connector"
-version = "1.5.0"
+version = "1.5.0.post1"
 authors = [
   { name="Raul Dalgamonni", email="rauldalgamonnialonso@gmail.com"},
 ]
@@ -49,7 +49,12 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["collibra_connector", "collibra_connector.api"]
+include = [
+    "collibra_connector",
+    "collibra_connector.api",
+    "collibra_connector.apiv2",
+    "collibra_connector.query_builder"
+]
 
 [tool.setuptools.package-data]
 collibra_connector = ["py.typed"]

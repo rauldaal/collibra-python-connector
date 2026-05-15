@@ -17,7 +17,7 @@ from .query_builder import (
     UserBuilder,
 )
 
-__version__ = "1.5.0"
+__version__ = "1.5.0.post1"
 __all__ = [
     "CollibraConnector",
     "FilterBuilder",
