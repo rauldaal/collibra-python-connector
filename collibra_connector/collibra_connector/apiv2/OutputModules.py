@@ -4,13 +4,24 @@ from typing import Any, Dict, Optional, Union
 from .Base import BaseAPI
 
 
-class OutputModule(BaseAPI):
+class OutputModules(BaseAPI):
     """
     Output Module API endpoints for Collibra DGC.
 
-    All export methods accept the query body as either:
+    All export methods accept the query body in any of three forms:
     - A plain ``dict`` (ViewConfig / TableViewConfig already constructed).
     - A JSON ``str`` (will be decoded automatically).
+    - An :class:`~collibra_connector.query_builder.OutputModuleQueryBuilder`
+      instance (``build()`` is called automatically).
+
+    The convenience ``*_query()`` methods accept a builder directly and are
+    the preferred high-level interface::
+
+        query = OutputModuleQueryBuilder().asset(
+            ResourceBuilder("MyAsset").signifier("Name").id("Id")
+        )
+        data  = conn.output_module.export_json_query(query)
+        rows  = conn.output_module.export_csv_query(query)
     """
 
     def __init__(self, connector):
@@ -31,18 +42,22 @@ class OutputModule(BaseAPI):
         Accepts:
         - ``dict``                          → returned as-is
         - ``str``                           → JSON-decoded
+        - ``OutputModuleQueryBuilder``       → ``.build()`` called
         """
+        # Import lazily to avoid circular imports at module load time
+        from collibra_connector.query_builder import OutputModuleQueryBuilder
+        if isinstance(body, OutputModuleQueryBuilder):
+            return body.build()
         if isinstance(body, str):
             try:
                 return _json.loads(body)
             except _json.JSONDecodeError as exc:
                 raise ValueError(f"body is not valid JSON: {exc}") from exc
-        if hasattr(body, "build") and callable(body.build):
-            body = body.build()
         if isinstance(body, dict):
             return body
         raise TypeError(
-            f"body must be a dict or JSON str, got {type(body).__name__!r}."
+            f"body must be a dict, JSON str, or OutputModuleQueryBuilder, "
+            f"got {type(body).__name__!r}."
         )
 
     # ------------------------------------------------------------------
@@ -51,20 +66,23 @@ class OutputModule(BaseAPI):
 
     def export_json(
         self,
-        body: Union[dict, str],
+        body: Union[dict, str, Any],
         validation_enabled: bool = False,
     ) -> Dict[Any, Any]:
         """
         Export results in JSON format (synchronous, returns immediately).
 
-        Accepts a ``ViewConfig`` or ``TableViewConfig`` payload as a ``dict``
-        or JSON ``str``.
+        Accepts a ``ViewConfig`` **or** ``TableViewConfig`` payload in any of
+        the three supported forms — ``dict``, JSON ``str``, or an
+        :class:`~collibra_connector.query_builder.OutputModuleQueryBuilder`
+        instance (``build()`` is called automatically).
 
         Note: ViewConfig's syntax validation is disabled by default for
         backward-compatibility. Enable it in development to catch typos early.
 
         Args:
-            body:               The query payload — a ``dict`` or JSON ``str``.
+            body:               The query payload — a ``dict``, JSON ``str``,
+                               or ``OutputModuleQueryBuilder`` instance.
             validation_enabled: When ``True`` the ``validationEnabled=true``
                                query parameter is sent, activating server-side
                                structural validation of the ViewConfig.
@@ -73,6 +91,12 @@ class OutputModule(BaseAPI):
             Dict[Any, Any]: Parsed JSON response.
 
         Example::
+
+            # Using the fluent builder (ViewConfig)
+            query = OutputModuleQueryBuilder().term(
+                ResourceBuilder("Business Term").id("TermId").signifier("Name")
+            )
+            data = conn.output_module.export_json(query)
 
             # Using a raw dict
             data = conn.output_module.export_json(
@@ -84,11 +108,27 @@ class OutputModule(BaseAPI):
         response = self._post(url=endpoint, data=self._resolve_body(body), headers=self._DATA_HEADERS, params=params)
         return self._handle_response(response)
 
+    def export_json_query(
+        self,
+        builder: Any,
+        validation_enabled: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Convenience wrapper — export JSON using an
+        :class:`~collibra_connector.query_builder.OutputModuleQueryBuilder`.
 
+        Args:
+            builder:            A configured ``OutputModuleQueryBuilder``.
+            validation_enabled: Validate syntax before execution.
+
+        Returns:
+            Parsed JSON response dict.
+        """
+        return self.export_json(body=builder, validation_enabled=validation_enabled)
 
     def export_json_in_job(
         self,
-        body: Union[dict, str],
+        body: Union[dict, str, Any],
         validation_enabled: bool = False,
         file_name: Optional[str] = None,
         send_notification: bool = False,
@@ -116,7 +156,7 @@ class OutputModule(BaseAPI):
 
     def export_json_to_file(
         self,
-        body: Union[dict, str],
+        body: Union[dict, str, Any],
         validation_enabled: bool = False,
         file_name: Optional[str] = None,
     ) -> Dict[str, Any]:
@@ -141,7 +181,7 @@ class OutputModule(BaseAPI):
 
     def export_csv(
         self,
-        body: Union[dict, str],
+        body: Union[dict, str, Any],
         validation_enabled: bool = False,
         separator: str = ";",
         quote: str = '"',
@@ -176,11 +216,34 @@ class OutputModule(BaseAPI):
             self._handle_response(response)  # raises the appropriate HTTP error
         return response.text
 
+    def export_csv_query(
+        self,
+        builder: Any,
+        validation_enabled: bool = False,
+        separator: str = ";",
+        quote: str = '"',
+        escape: str = "\\",
+        header_row: bool = True,
+    ) -> str:
+        """
+        Convenience wrapper — export CSV using an
+        :class:`~collibra_connector.query_builder.OutputModuleQueryBuilder`.
 
+        Returns:
+            CSV content as a string.
+        """
+        return self.export_csv(
+            body=builder,
+            validation_enabled=validation_enabled,
+            separator=separator,
+            quote=quote,
+            escape=escape,
+            header_row=header_row,
+        )
 
     def export_csv_in_job(
         self,
-        body: Union[dict, str],
+        body: Union[dict, str, Any],
         validation_enabled: bool = False,
         file_name: Optional[str] = None,
         separator: str = ";",
@@ -212,7 +275,7 @@ class OutputModule(BaseAPI):
 
     def export_csv_to_file(
         self,
-        body: Union[dict, str],
+        body: Union[dict, str, Any],
         validation_enabled: bool = False,
         file_name: Optional[str] = None,
         separator: str = ";",
@@ -246,7 +309,7 @@ class OutputModule(BaseAPI):
 
     def export_excel_in_job(
         self,
-        body: Union[dict, str],
+        body: Union[dict, str, Any],
         validation_enabled: bool = False,
         file_name: Optional[str] = None,
         sheet_name: Optional[str] = None,
@@ -275,7 +338,7 @@ class OutputModule(BaseAPI):
 
     def export_excel_to_file(
         self,
-        body: Union[dict, str],
+        body: Union[dict, str, Any],
         validation_enabled: bool = False,
         file_name: Optional[str] = None,
         sheet_name: Optional[str] = None,
@@ -298,7 +361,32 @@ class OutputModule(BaseAPI):
         response = self._post(url=endpoint, data=self._resolve_body(body), params=params)
         return self._handle_response(response)
 
+    def export_excel_query(
+        self,
+        builder: Any,
+        validation_enabled: bool = False,
+        file_name: Optional[str] = None,
+        sheet_name: Optional[str] = None,
+        header_row: bool = True,
+        send_notification: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Convenience wrapper — export Excel using an
+        :class:`~collibra_connector.query_builder.OutputModuleQueryBuilder`.
 
+        Submits an async job.
+
+        Returns:
+            Job representation dict.
+        """
+        return self.export_excel_in_job(
+            body=builder,
+            validation_enabled=validation_enabled,
+            file_name=file_name,
+            sheet_name=sheet_name,
+            header_row=header_row,
+            send_notification=send_notification,
+        )
 
     # ------------------------------------------------------------------
     # XML export
@@ -306,7 +394,7 @@ class OutputModule(BaseAPI):
 
     def export_xml(
         self,
-        body: Union[dict, str],
+        body: Union[dict, str, Any],
         validation_enabled: bool = False,
     ) -> str:
         """
@@ -324,7 +412,7 @@ class OutputModule(BaseAPI):
 
     def export_xml_in_job(
         self,
-        body: Union[dict, str],
+        body: Union[dict, str, Any],
         validation_enabled: bool = False,
         file_name: Optional[str] = None,
     ) -> Dict[str, Any]:
@@ -345,7 +433,7 @@ class OutputModule(BaseAPI):
 
     def export_xml_to_file(
         self,
-        body: Union[dict, str],
+        body: Union[dict, str, Any],
         validation_enabled: bool = False,
         file_name: Optional[str] = None,
     ) -> Dict[str, Any]:

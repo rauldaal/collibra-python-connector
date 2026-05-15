@@ -2,7 +2,7 @@ import uuid
 from .Base import BaseAPI
 
 
-class RelationType(BaseAPI):
+class RelationTypes(BaseAPI):
     """API class for relation type operations."""
 
     def __init__(self, connector):
@@ -150,6 +150,7 @@ class RelationType(BaseAPI):
         relation_type_id: str = None,
         public_id: str = None,
         description: str = None,
+        id: str = None
     ):
         """
         Adds a new relation type.
@@ -160,6 +161,7 @@ class RelationType(BaseAPI):
         :param relation_type_id: Optional UUID for the new relation type.
         :param public_id: Optional public ID for the new relation type.
         :param description: Optional description.
+        :param id: Optional ID for the new relation type.
         :return: Created relation type details.
         """
         if not role:
@@ -195,9 +197,10 @@ class RelationType(BaseAPI):
             "coRole": co_role,
             "sourceTypeId": source_type_id,
             "targetTypeId": target_type_id,
+            "id": id
         }
         if relation_type_id is not None:
-            data["id"] = relation_type_id
+            data["relationTypeId"] = relation_type_id
         if public_id is not None:
             data["publicId"] = public_id
         if description is not None:
@@ -228,6 +231,7 @@ class RelationType(BaseAPI):
         target_type_id: str = None,
         public_id: str = None,
         description: str = None,
+        id: str = None
     ):
         """
         Changes the relation type with the given ID.
@@ -238,6 +242,7 @@ class RelationType(BaseAPI):
         :param target_type_id: Optional new target asset type UUID.
         :param public_id: Optional new public ID.
         :param description: Optional new description.
+        :param id: Optional new ID for the relation type.
         :return: Updated relation type details.
         """
         if not relation_type_id:
@@ -274,6 +279,8 @@ class RelationType(BaseAPI):
             data["publicId"] = public_id
         if description is not None:
             data["description"] = description
+        if id is not None:
+            data["id"] = id
 
         if not data:
             raise ValueError(

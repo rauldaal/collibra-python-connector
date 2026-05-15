@@ -38,11 +38,14 @@ class BaseAPI:
             timeout=self.__connector.timeout
         )
 
-    def _post(self, url: str, data, headers: dict = None, params: dict = None):
+    def _post(self, url: str, data, headers: dict = None, params: dict = None, files: dict = None):
         """
         Makes a POST request to the specified URL with the given data.
         :param url: The URL to send the POST request to.
         :param data: The data to send in the POST request (dict or list).
+        :param headers: Optional headers to include in the POST request.
+        :param params: Optional parameters to include in the POST request.
+        :param files: Optional files to include in the POST request.
         :return: The response from the POST request.
         """
         url = self.__base_api if not url else url
@@ -57,6 +60,7 @@ class BaseAPI:
             json=data,
             headers=headers,
             params=params,
+            files=files,
             timeout=self.__connector.timeout
         )
 

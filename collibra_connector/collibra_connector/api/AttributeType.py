@@ -42,6 +42,9 @@ class AttributeType(BaseAPI):
         valid_match_modes = ["START", "END", "ANYWHERE", "EXACT"]
         if name_match_mode not in valid_match_modes:
             raise ValueError(f"name_match_mode must be one of: {', '.join(valid_match_modes)}")
+        valid_sort_fields = ["NAME", "KIND", "STATISTICS_ENABLED", "IS_INTEGER", "ALLOWED_VALUES"]
+        if sort_field not in valid_sort_fields:
+            raise ValueError(f"sort_field must be one of: {', '.join(valid_sort_fields)}")
         if sort_order not in ["ASC", "DESC"]:
             raise ValueError("sort_order must be 'ASC' or 'DESC'")
         if limit < 0 or limit > 1000:
@@ -114,30 +117,60 @@ class AttributeType(BaseAPI):
         response = self._get(url=f"{self.__base_api}/publicId/{public_id}")
         return self._handle_response(response)
 
-    def add_attribute_type(self, name: str, kind: str, description: str = None,
-                           is_integer: bool = None, statistics_enabled: bool = None):
+    def add_attribute_type(self, name: str, kind: str, id: str = None,
+                           public_id: str = None, description: str = None,
+                           language: str = None, statistics_enabled: bool = None,
+                           allowed_values: list = None, string_type: str = None,
+                           is_integer: bool = None):
         """
         Adds a new Attribute Type.
-        :param name: The name of the attribute type (required).
+        :param name: The name of the attribute type (required, 1-255 chars).
         :param kind: The kind of the attribute type (required). Options: STRING, BOOLEAN, DATE,
                      NUMERIC, SINGLE_VALUE_LIST, MULTI_VALUE_LIST, SCRIPT.
-        :param description: Optional description.
-        :param is_integer: For NUMERIC types, whether to store integers only.
-        :param statistics_enabled: Whether statistics are enabled.
+        :param id: Optional UUID for the new attribute type. Must not start with 00000000-0000-0000-.
+        :param public_id: Optional public ID (ASCII letters/digits, starts uppercase, ends with _C, 1-260 chars).
+        :param description: Optional description (0-4000 chars).
+        :param language: [DEPRECATED] Language for SCRIPT attribute types (0-255 chars).
+        :param statistics_enabled: Whether statistics are enabled (NUMERIC or BOOLEAN only).
+        :param allowed_values: List of allowed values (SINGLE_VALUE_LIST or MULTI_VALUE_LIST only).
+        :param string_type: RICH_TEXT or PLAIN_TEXT (STRING only).
+        :param is_integer: Whether the attribute type holds an integer value (NUMERIC only).
         :return: Created attribute type details.
         """
         if not name:
             raise ValueError("name is required")
         if not kind:
             raise ValueError("kind is required")
+        valid_kinds = ["BOOLEAN", "STRING", "NUMERIC", "DATE", "SINGLE_VALUE_LIST", "MULTI_VALUE_LIST", "SCRIPT"]
+        if kind not in valid_kinds:
+            raise ValueError(f"kind must be one of: {', '.join(valid_kinds)}")
+        if string_type is not None and string_type not in ["RICH_TEXT", "PLAIN_TEXT"]:
+            raise ValueError("string_type must be 'RICH_TEXT' or 'PLAIN_TEXT'")
+        if id is not None:
+            try:
+                uuid.UUID(id)
+            except ValueError as exc:
+                raise ValueError("id must be a valid UUID") from exc
+            if id.startswith("00000000-0000-0000-"):
+                raise ValueError("id must not start with 00000000-0000-0000-")
 
         data = {"name": name, "kind": kind}
+        if id is not None:
+            data["id"] = id
+        if public_id is not None:
+            data["publicId"] = public_id
         if description is not None:
             data["description"] = description
-        if is_integer is not None:
-            data["isInteger"] = is_integer
+        if language is not None:
+            data["language"] = language
         if statistics_enabled is not None:
             data["statisticsEnabled"] = statistics_enabled
+        if allowed_values is not None:
+            data["allowedValues"] = allowed_values
+        if string_type is not None:
+            data["stringType"] = string_type
+        if is_integer is not None:
+            data["isInteger"] = is_integer
 
         response = self._post(url=self.__base_api, data=data)
         return self._handle_response(response)
@@ -150,19 +183,24 @@ class AttributeType(BaseAPI):
         """
         if not attribute_types or not isinstance(attribute_types, list):
             raise ValueError("attribute_types must be a non-empty list")
-        response = self._post(url=f"{self.__base_api}/bulk", data={"attributeTypes": attribute_types})
+        response = self._post(url=f"{self.__base_api}/bulk", data=attribute_types)
         return self._handle_response(response)
 
     def change_attribute_type(self, attribute_type_id: str, name: str = None,
-                               description: str = None, is_integer: bool = None,
-                               statistics_enabled: bool = None):
+                               description: str = None, public_id: str = None,
+                               language: str = None, is_integer: bool = None,
+                               statistics_enabled: bool = None,
+                               allowed_values: list = None):
         """
         Changes the attribute type with the given ID.
         :param attribute_type_id: The UUID of the attribute type to change.
-        :param name: Optional new name.
-        :param description: Optional new description.
-        :param is_integer: Optional integer setting.
-        :param statistics_enabled: Optional statistics enabled setting.
+        :param name: Optional new name (1-255 chars).
+        :param description: Optional new description (0-4000 chars).
+        :param public_id: Optional new public ID (1-260 chars, ASCII letters/digits, starts uppercase, ends with _C).
+        :param language: [DEPRECATED] Optional language (SCRIPT kind only, 0-255 chars).
+        :param is_integer: Optional integer setting (NUMERIC kind only).
+        :param statistics_enabled: Optional statistics enabled setting (NUMERIC or BOOLEAN kind only).
+        :param allowed_values: Optional list of allowed values (SINGLE_VALUE_LIST or MULTI_VALUE_LIST only).
         :return: Updated attribute type details.
         """
         if not attribute_type_id:
@@ -177,10 +215,16 @@ class AttributeType(BaseAPI):
             data["name"] = name
         if description is not None:
             data["description"] = description
+        if public_id is not None:
+            data["publicId"] = public_id
+        if language is not None:
+            data["language"] = language
         if is_integer is not None:
             data["isInteger"] = is_integer
         if statistics_enabled is not None:
             data["statisticsEnabled"] = statistics_enabled
+        if allowed_values is not None:
+            data["allowedValues"] = allowed_values
 
         if not data:
             raise ValueError("At least one field to change must be provided")
@@ -191,12 +235,12 @@ class AttributeType(BaseAPI):
     def change_attribute_types(self, attribute_types: list):
         """
         Changes multiple attribute types in one go.
-        :param attribute_types: List of attribute type change objects (must include id).
+        :param attribute_types: List of ChangeAttributeTypeRequest objects (each must include 'id').
         :return: Updated attribute types.
         """
         if not attribute_types or not isinstance(attribute_types, list):
             raise ValueError("attribute_types must be a non-empty list")
-        response = self._patch(url=f"{self.__base_api}/bulk", data={"attributeTypes": attribute_types})
+        response = self._patch(url=f"{self.__base_api}/bulk", data=attribute_types)
         return self._handle_response(response)
 
     def remove_attribute_type(self, attribute_type_id: str):
@@ -223,5 +267,5 @@ class AttributeType(BaseAPI):
         """
         if not attribute_type_ids or not isinstance(attribute_type_ids, list):
             raise ValueError("attribute_type_ids must be a non-empty list")
-        response = self._delete(url=f"{self.__base_api}/bulk")
+        response = self._delete(url=f"{self.__base_api}/bulk", data=attribute_type_ids)
         return self._handle_response(response)

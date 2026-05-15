@@ -32,6 +32,7 @@ from .api import (
     Domain,
     DomainType,
     File,
+    Import,
     Issue,
     JdbcDriver,
     Job,
@@ -63,6 +64,57 @@ from .api import (
     WorkflowInstance,
     WorkflowTask,
 )
+from .apiv2 import (
+    Activities as V2Activities,
+    Applications as V2Applications,
+    Assets as V2Assets,
+    AssetTypes as V2AssetTypes,
+    Assignments as V2Assignments,
+    Attachments as V2Attachments,
+    Attributes as V2Attributes,
+    AttributeTypes as V2AttributeTypes,
+    Auth as V2Auth,
+    Comments as V2Comments,
+    Communities as V2Communities,
+    ComplexRelations as V2ComplexRelations,
+    ComplexRelationTypes as V2ComplexRelationTypes,
+    DataQualityRules as V2DataQualityRules,
+    DiagramPictures as V2DiagramPictures,
+    Domains as V2Domains,
+    DomainTypes as V2DomainTypes,
+    Files as V2Files,
+    Imports as V2Imports,
+    Issues as V2Issues,
+    JdbcDrivers as V2JdbcDrivers,
+    Jobs as V2Jobs,
+    Licenses as V2Licenses,
+    Mappings as V2Mappings,
+    Metadata as V2Metadata,
+    NavigationStatistics as V2NavigationStatistics,
+    OutputModules as V2OutputModules,
+    Ratings as V2Ratings,
+    Relations as V2Relations,
+    RelationTypes as V2RelationTypes,
+    Reporting as V2Reporting,
+    Responsibilities as V2Responsibilities,
+    Roles as V2Roles,
+    SAML as V2SAML,
+    Scopes as V2Scopes,
+    Search as V2Search,
+    Statuses as V2Statuses,
+    Tags as V2Tags,
+    Traits as V2Traits,
+    TraitAssignments as V2TraitAssignments,
+    Users as V2Users,
+    UserGroups as V2UserGroups,
+    Utils as V2Utils,
+    Validations as V2Validations,
+    ViewPermissions as V2ViewPermissions,
+    Workflows as V2Workflows,
+    WorkflowDefinitions as V2WorkflowDefinitions,
+    WorkflowInstances as V2WorkflowInstances,
+    WorkflowTasks as V2WorkflowTasks,
+)
 
 if TYPE_CHECKING:
     from requests.auth import AuthBase
@@ -77,17 +129,17 @@ class CollibraConnector:
     connection management, and provides access to all API modules.
 
     Attributes:
-        activity: Activity API operations
-        asset: Asset API operations
-        community: Community API operations
-        domain: Domain API operations
-        user: User API operations
-        responsibility: Responsibility API operations
-        workflow: Workflow API operations
+        activities: Activities API operations
+        assets: Assets API operations
+        communities: Communities API operations
+        domains: Domains API operations
+        users: Users API operations
+        responsibilities: Responsibilities API operations
+        workflows: Workflows API operations
         metadata: Metadata API operations
-        comment: Comment API operations
-        relation: Relation API operations
-        output_module: Output Module API operations
+        comments: Comments API operations
+        relations: Relations API operations
+        output_modules: Output Modules API operations
         utils: Utility operations
 
     Example:
@@ -97,11 +149,11 @@ class CollibraConnector:
         ...     password="your-password"
         ... )
         >>> if connector.test_connection():
-        ...     assets = connector.asset.find_assets()
+        ...     assets = connector.assets.find_assets()
 
         # Using as context manager:
         >>> with CollibraConnector(api="...", username="...", password="...") as conn:
-        ...     assets = conn.asset.find_assets()
+        ...     assets = conn.assets.find_assets()
     """
 
     DEFAULT_TIMEOUT: int = 30
@@ -163,7 +215,7 @@ class CollibraConnector:
         self.__retry_delay: float = retry_delay
         self.__session: Optional[requests.Session] = None
 
-        # Initialize all API classes
+        # Initialize api (v1) classes — singular attribute names
         self.activity: Activity = Activity(self)
         self.application: Application = Application(self)
         self.asset: Asset = Asset(self)
@@ -182,6 +234,7 @@ class CollibraConnector:
         self.domain: Domain = Domain(self)
         self.domain_type: DomainType = DomainType(self)
         self.file: File = File(self)
+        self.import_api: Import = Import(self)
         self.issue: Issue = Issue(self)
         self.jdbc_driver: JdbcDriver = JdbcDriver(self)
         self.job: Job = Job(self)
@@ -212,6 +265,58 @@ class CollibraConnector:
         self.workflow_definition: WorkflowDefinition = WorkflowDefinition(self)
         self.workflow_instance: WorkflowInstance = WorkflowInstance(self)
         self.workflow_task: WorkflowTask = WorkflowTask(self)
+
+        # Initialize apiv2 classes — plural attribute names
+        # Where the class name is identical in both packages, v2_ prefix is used
+        self.activities: V2Activities = V2Activities(self)
+        self.applications: V2Applications = V2Applications(self)
+        self.assets: V2Assets = V2Assets(self)
+        self.asset_types: V2AssetTypes = V2AssetTypes(self)
+        self.assignments: V2Assignments = V2Assignments(self)
+        self.attachments: V2Attachments = V2Attachments(self)
+        self.attributes: V2Attributes = V2Attributes(self)
+        self.attribute_types: V2AttributeTypes = V2AttributeTypes(self)
+        self.v2_auth_api: V2Auth = V2Auth(self)
+        self.comments: V2Comments = V2Comments(self)
+        self.communities: V2Communities = V2Communities(self)
+        self.complex_relations: V2ComplexRelations = V2ComplexRelations(self)
+        self.complex_relation_types: V2ComplexRelationTypes = V2ComplexRelationTypes(self)
+        self.data_quality_rules: V2DataQualityRules = V2DataQualityRules(self)
+        self.diagram_pictures: V2DiagramPictures = V2DiagramPictures(self)
+        self.domains: V2Domains = V2Domains(self)
+        self.domain_types: V2DomainTypes = V2DomainTypes(self)
+        self.files: V2Files = V2Files(self)
+        self.imports: V2Imports = V2Imports(self)
+        self.issues: V2Issues = V2Issues(self)
+        self.jdbc_drivers: V2JdbcDrivers = V2JdbcDrivers(self)
+        self.jobs: V2Jobs = V2Jobs(self)
+        self.licenses: V2Licenses = V2Licenses(self)
+        self.mappings: V2Mappings = V2Mappings(self)
+        self.v2_metadata: V2Metadata = V2Metadata(self)
+        self.v2_navigation_statistics: V2NavigationStatistics = V2NavigationStatistics(self)
+        self.output_modules: V2OutputModules = V2OutputModules(self)
+        self.ratings: V2Ratings = V2Ratings(self)
+        self.relations: V2Relations = V2Relations(self)
+        self.relation_types: V2RelationTypes = V2RelationTypes(self)
+        self.v2_reporting: V2Reporting = V2Reporting(self)
+        self.responsibilities: V2Responsibilities = V2Responsibilities(self)
+        self.roles: V2Roles = V2Roles(self)
+        self.v2_saml: V2SAML = V2SAML(self)
+        self.scopes: V2Scopes = V2Scopes(self)
+        self.v2_search: V2Search = V2Search(self)
+        self.statuses: V2Statuses = V2Statuses(self)
+        self.tags: V2Tags = V2Tags(self)
+        self.traits: V2Traits = V2Traits(self)
+        self.trait_assignments: V2TraitAssignments = V2TraitAssignments(self)
+        self.users: V2Users = V2Users(self)
+        self.user_groups: V2UserGroups = V2UserGroups(self)
+        self.v2_utils: V2Utils = V2Utils(self)
+        self.validations: V2Validations = V2Validations(self)
+        self.view_permissions: V2ViewPermissions = V2ViewPermissions(self)
+        self.workflows: V2Workflows = V2Workflows(self)
+        self.workflow_definitions: V2WorkflowDefinitions = V2WorkflowDefinitions(self)
+        self.workflow_instances: V2WorkflowInstances = V2WorkflowInstances(self)
+        self.workflow_tasks: V2WorkflowTasks = V2WorkflowTasks(self)
 
         # Initialize Logger without basicConfig
         self.logger: logging.Logger = logging.getLogger(__name__)

@@ -16,6 +16,7 @@ from .DiagramPicture import DiagramPicture
 from .Domain import Domain
 from .DomainType import DomainType
 from .File import File
+from .Import import Import
 from .Issue import Issue
 from .JdbcDriver import JdbcDriver
 from .Job import Job
@@ -66,6 +67,7 @@ __all__ = [
     "Domain",
     "DomainType",
     "File",
+    "Import",
     "Issue",
     "JdbcDriver",
     "Job",

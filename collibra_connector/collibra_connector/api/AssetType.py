@@ -105,49 +105,69 @@ class AssetType(BaseAPI):
         response = self._get(url=f"{self.__base_api}/publicId/{public_id}")
         return self._handle_response(response)
 
-    def add_asset_type(self, name: str, description: str = None, parent_id: str = None,
+    def add_asset_type(self, id: str = None, public_id: str = None, name: str = None, description: str = None,
                        color: str = None, symbol_type: str = None, icon_code: str = None,
-                       acronym_code: str = None, display_name_enabled: bool = None,
-                       rating_enabled: bool = None):
+                       acronym_code: str = None, parent_id: str = None, display_name_enabled: bool = None,
+                       rating_enabled: bool = None, trait_ids: list = None):
         """
         Adds a new asset type.
+        :param id: The UUID for the new Asset Type.
+        :param public_id: The public id for the new Asset Type.
         :param name: The name of the asset type (required).
         :param description: Optional description.
-        :param parent_id: Optional UUID of the parent asset type.
-        :param color: Optional color for the asset type.
-        :param symbol_type: Optional symbol type.
+        :param color: Optional color for the asset type (hex, e.g. '#ff0000').
+        :param symbol_type: Optional symbol type (NONE, ICON_CODE, ACRONYM_CODE).
         :param icon_code: Optional icon code.
-        :param acronym_code: Optional acronym code.
-        :param display_name_enabled: Whether display name is enabled.
-        :param rating_enabled: Whether rating is enabled.
+        :param acronym_code: Optional acronym code (1-4 alphanumeric chars).
+        :param parent_id: Optional UUID of the parent asset type.
+        :param display_name_enabled: Whether display name is enabled (required).
+        :param rating_enabled: Whether rating is enabled (required).
+        :param trait_ids: List of trait UUIDs to apply.
         :return: Created asset type details.
         """
-        if not name:
+        if name is None:
             raise ValueError("name is required")
+        if display_name_enabled is None:
+            raise ValueError("display_name_enabled is required")
+        if rating_enabled is None:
+            raise ValueError("rating_enabled is required")
+        if symbol_type is None:
+            raise ValueError("symbol_type is required")
 
+        if id is not None:
+            try:
+                uuid.UUID(id)
+            except ValueError as exc:
+                raise ValueError("id must be a valid UUID") from exc
         if parent_id is not None:
             try:
                 uuid.UUID(parent_id)
             except ValueError as exc:
                 raise ValueError("parent_id must be a valid UUID") from exc
+        if trait_ids is not None:
+            if not isinstance(trait_ids, list) or not all(isinstance(t, str) for t in trait_ids):
+                raise ValueError("trait_ids must be a list of UUID strings")
 
-        data = {"name": name}
+        data = {"name": name,
+                "displayNameEnabled": display_name_enabled,
+                "ratingEnabled": rating_enabled,
+                "symbolType": symbol_type}
+        if id is not None:
+            data["id"] = id
+        if public_id is not None:
+            data["publicId"] = public_id
         if description is not None:
             data["description"] = description
-        if parent_id is not None:
-            data["parentId"] = parent_id
         if color is not None:
             data["color"] = color
-        if symbol_type is not None:
-            data["symbolType"] = symbol_type
         if icon_code is not None:
             data["iconCode"] = icon_code
         if acronym_code is not None:
             data["acronymCode"] = acronym_code
-        if display_name_enabled is not None:
-            data["displayNameEnabled"] = display_name_enabled
-        if rating_enabled is not None:
-            data["ratingEnabled"] = rating_enabled
+        if parent_id is not None:
+            data["parentId"] = parent_id
+        if trait_ids is not None:
+            data["traitIds"] = trait_ids
 
         response = self._post(url=self.__base_api, data=data)
         return self._handle_response(response)

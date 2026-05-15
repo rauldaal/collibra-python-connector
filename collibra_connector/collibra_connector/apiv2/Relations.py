@@ -1,8 +1,9 @@
 import uuid
+from typing import List, Dict, Any
 from .Base import BaseAPI
 
 
-class Relation(BaseAPI):
+class Relations(BaseAPI):
     def __init__(self, connector):
         super().__init__(connector)
         self.__base_api = connector.api + "/relations"
@@ -130,7 +131,8 @@ class Relation(BaseAPI):
 
     def change_relation(
         self,
-        relation_id: str,
+        id: str = None,
+        relation_id: str = None,
         source_id: str = None,
         target_id: str = None,
         starting_date: int = None,
@@ -139,7 +141,8 @@ class Relation(BaseAPI):
         """
         Changes the relation with the information that is present in the request.
         Only properties that are specified in this request and have non-null values are updated.
-        :param relation_id: The ID of the relation to be changed (required UUID).
+        :param id: The ID of the relation to be changed (required UUID, both path and body parameter).
+        :param relation_id: The ID of the relation to be changed (optional UUID, query parameter).
         :param source_id: The ID of the new source for the relation (optional UUID).
         :param target_id: The ID of the new target for the relation (optional UUID).
         :param starting_date: The new starting date for the relation (deprecated, int64).
@@ -147,15 +150,19 @@ class Relation(BaseAPI):
         :return: Details of the updated relation.
         """
         # Validate required parameters
-        if not relation_id:
-            raise ValueError("relation_id is required")
-        if not isinstance(relation_id, str):
-            raise ValueError("relation_id must be a string")
+        if not id and not relation_id:
+            raise ValueError("Either id or relation_id is required")
+
+        if relation_id:
+            id = relation_id  # Overwrite id with relation_id if provided
+
+        if not isinstance(id, str):
+            raise ValueError("id must be a string")
 
         try:
-            uuid.UUID(relation_id)
+            uuid.UUID(id)
         except ValueError as exc:
-            raise ValueError("relation_id must be a valid UUID") from exc
+            raise ValueError("id must be a valid UUID") from exc
 
         # Validate source_id if provided
         if source_id is not None:
@@ -190,8 +197,8 @@ class Relation(BaseAPI):
                 raise ValueError("ending_date must be a positive integer")
 
         # Build request body - only include provided values
-        # Include the relation_id in the body as required by the API
-        data = {"id": relation_id}
+        # Include the id in the body as required by the API
+        data = {"id": id}
 
         if source_id is not None:
             data["sourceId"] = source_id
@@ -202,7 +209,42 @@ class Relation(BaseAPI):
         if ending_date is not None:
             data["endingDate"] = ending_date
 
-        response = self._patch(url=f"{self.__base_api}/{relation_id}", data=data)
+        # Use id as a path parameter and include it in the request body
+        response = self._patch(url=f"{self.__base_api}/{id}", data=data)
+        return self._handle_response(response)
+
+    def add_relations(self, relations: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Adds multiple relations in bulk.
+        """
+        if not relations or not isinstance(relations, list):
+            raise ValueError("relations must be a non-empty list")
+
+        response = self._post(url=f"{self.__base_api}/bulk", data=relations)
+        return self._handle_response(response)
+
+    def remove_relations(self, relation_ids: List[str]) -> None:
+        """
+        Removes multiple relations identified by their IDs in bulk.
+        """
+        if not relation_ids or not isinstance(relation_ids, list):
+            raise ValueError("relation_ids must be a non-empty list")
+
+        for relation_id in relation_ids:
+            if not self._uuid_validation(relation_id):
+                raise ValueError(f"relation_id {relation_id} must be a valid UUID")
+
+        response = self._delete(url=f"{self.__base_api}/bulk", data=relation_ids)
+        return self._handle_response(response)
+
+    def change_relations(self, relations: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Changes multiple relations in bulk.
+        """
+        if not relations or not isinstance(relations, list):
+            raise ValueError("relations must be a non-empty list")
+
+        response = self._patch(url=f"{self.__base_api}/bulk", data=relations)
         return self._handle_response(response)
 
     def find_relations(
